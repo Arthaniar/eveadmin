@@ -6,7 +6,6 @@ if(isset($_POST['slack_email'])) {
     if($sendSlackInvite) {
       setAlert('success', 'Slack Invitation Sent', 'Check your email for your Slack invite, and remember to register with your Auth username (replacing spaces with underscores).');
     }
-
 }
 ?>
 <div class="opaque-container">
