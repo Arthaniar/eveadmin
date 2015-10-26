@@ -27,7 +27,7 @@ function standingsCheck($interactionName, $type) {
 						"Executive Outcomes" => "5",
 						"A Band Apart." => "5",
 						"The Terrifying League Of Dog Fort" => "10",
-						"Get Off My Lawn" => "5",
+						"Get Off My Lawn" => "10",
 						"Garys Most Noble Army of Third Place Mediocrity" => "5",
 						"Ashkrall" => "10",
 						"Mapache Doom" => "10",
@@ -39,34 +39,41 @@ function standingsCheck($interactionName, $type) {
 		$value = $standingsArray[$interactionName];
 	} else {
 
-		// Detecting if we're looking up an alliance
-		$stmt = $db->prepare('SELECT * FROM eve_alliance_list WHERE alliance_name = ?');
-		$stmt->execute(array($interactionName));
-		$allianceCheck = $stmt->rowCount();
-
+		// Creating the Pheal object for the Owner lookup
 		$phealLookup = new Pheal(1, 1, 'eve');
-		$characterIDInfo = $phealLookup->CharacterID(array('names' => $interactionName));
-		$lookupResponse = $phealLookup->CharacterAffiliation(array('ids' => $characterIDInfo->characters[0]->characterID));
 
-		if($lookupResponse->characters[0]->corporationName == '' AND $lookupResponse->characters[0]->characterID = 0 AND $allianceCheck != 1) {
-			// This means what we're looking up is a corporation, so lets grab their alliance info.
+		// Lookup OwnerID page
+		$ownerInfo = $phealLookup->OwnerID(array('names' => $interactionName));
+
+		// Geting the typeId and the object class
+		$interactionClass = $ownerInfo->owners[0]->ownerGroupID;
+		$interactionID = $ownerInfo->owners[0]->ownerID;
+
+		//Guide to Interaction Classes:
+		// 1 - character, 2 - corporation, 19 - faction, 32 - alliance
+
+		if($interactionClass != '32' AND $interactionClass != '19' AND $interactionID != '0') {
+			if($interactionClass == '1') {
+				$lookupResponse = $phealLookup->CharacterAffiliation(array('ids' => $interactionID));
+
+				$corporationID = $lookupResponse->characters[0]->corporationID;
+			} else {
+				$corporationID = $interactionID;
+			}
+
+			// Now we are on a corporation, so we're looking up their corporation ID
 			$phealLookupCorp = new Pheal(1, 1, 'corp');
-			$corporationInfo = $phealLookupCorp->CorporationSheet(array('corporationID' => $characterIDInfo->characters[0]->characterID));
+			$corporationInfo = $phealLookupCorp->CorporationSheet(array('corporationID' => $corporationID));
 			$corporationName = $corporationInfo->corporationName;
 			$allianceName = $corporationInfo->allianceName;
-		} else{
-			$corporationName = $lookupResponse->characters[0]->corporationName;
-			$allianceName = $lookupResponse->characters[0]->allianceName;
-		}
-
-		if($interactionName == 'Shadow of xXDEATHXx') {
-			var_dump($lookupResponse->characters[0]);
+		} else {
+			$value = 0;
 		}
 
 		// Checking to see if either the corporation or alliance name is in our standings
-		if(isset($standingsArray[$corporationName])) {
+		if(isset($corporationName) AND isset($standingsArray[$corporationName])) {
 			$value = $standingsArray[$corporationName];
-		} elseif(isset($standingsArray[$allianceName])) {
+		} elseif(isset($allianceName) AND isset($standingsArray[$allianceName])) {
 			$value = $standingsArray[$allianceName];
 		} else {
 			$value = 0;
