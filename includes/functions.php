@@ -432,8 +432,8 @@ function sendComplexSlackNotification($token, $botName, $channel, $message, $ico
 }
 
 function sendSlackInvite($email, $username, $token) {
-
-	$url = 'https://dogft.slack.com/api/users.admin.invite?t='.time();
+	global $settings;
+	$url = $settings->getSlackAddress().'/api/users.admin.invite?t='.time();
 
 	$fields = array(
 			'email' => urlencode($email),
