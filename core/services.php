@@ -85,7 +85,7 @@ if(isset($_GET['action'])) {
 					        	?>
 								<form action="/services/" method="post">
 									<p>Registering will send a Slack invite to your email address. Ensure your Slack username matches your Auth username, with underscores for any spaces.</p>
-									<label for="slack_email">Email Address: </label><input type="email" name="slack_email" id="slack_email">
+									<label for="slack_email">Email Address: </label><input class="form-control" type="email" name="slack_email" id="slack_email">
 									<input type="submit" class="btn btn-success" value="Register for Slack">
 								</form>
 					        	<?php
