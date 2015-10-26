@@ -24,10 +24,17 @@ if(isset($_GET['action'])) {
 					<div class="row opaque-section" style="background-image: none; background-color: transparent">
 						<div class="row box-title-section">
 							<h3 style="text-align: center"><?php echo $settings->getGroupTicker().' '.$settings->getVoiceCommunications(); ?></h3>
-							<h4 style="text-align: center; color: #01b43a">Synched</h4>
+							<h4 style="text-align: center; color: #01b43a">Synced</h4>
 						</div>
 						<div class="row" style="text-align: center; padding-top: 10px">
-							<a class="btn btn-primary" href="ts3server://<?php echo $settings->getVoiceAddress().'/?port='.$settings->getVoicePort().'&nickname='.$user->getDefaultCharacter();?>">Connect To TS3</a>
+							<?php
+							if($settings->getVoiceCommunications() == 'TS3') {
+								$program = 'ts3server';
+							} elseif($settings->getVoiceCommunications() == 'Mumble') {
+								$program = 'mumble';
+							}
+							?>
+							<a class="btn btn-primary" href="<?php echo $program; ?>://<?php echo $settings->getVoiceAddress().'/?port='.$settings->getVoicePort().'&nickname='.$user->getDefaultCharacter();?>">Connect To <?php echo $settings->getVoiceCommunications(); ?></a>
 							<p style="margin-top: 5px">Username: <?php echo $user->getUsername(); ?><br />Password: None</p>
 						</div>	
 					</div>
@@ -69,7 +76,7 @@ if(isset($_GET['action'])) {
 							<?php 
 					        if($slackRegistration) {
 					        	?>
-								<a href="https://dogft.slack.com" class="btn btn-primary" target="blank">Open Slack</a>
+								<a href="<?php echo $settings->getSlackAddress(); ?>" class="btn btn-primary" target="blank">Open Slack</a>
 								<p style="margin-top: 5px">Username: Your Email Address<br />
 								Password: Your Chosen Password<br />
 								Two Factor Auth: <?php echo $twofaStatus; ?></p>
@@ -95,7 +102,7 @@ if(isset($_GET['action'])) {
 							<h4 style="text-align: center; color: #01b43a">Registered and Synced</h4>
 						</div>
 						<div class="row" style="text-align: center; padding-top: 10px">
-							<a href="https://forum.dogft.com" target="blank" class="btn btn-primary">Go To Forums</a>
+							<a href="<?php echo $settings->getForumsAddress(); ?>" target="blank" class="btn btn-primary">Go To Forums</a>
 							<p style="margin-top: 5px">Username: <?php echo $user->getUsername(); ?><br />
 							Password: Your Auth Password</p>
 						</div>

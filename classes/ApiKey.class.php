@@ -78,8 +78,6 @@ class ApiKey {
 				$i++;
 			}
 		} catch (\Pheal\Exceptions\PhealException $e) {
-
-			var_dump($e);
 			$this->keyError = $this->parseKeyError($e);
 
 			$this->keyStatus = 0;
@@ -173,7 +171,7 @@ class ApiKey {
 		$accountInfo = $stmt->fetch();
 
 		if($slackDirectorNotification AND $settings->getSlack()) {
-			sendComplexSlackNotification($settings->getSlackAuthToken(), 'DOGFT Auth Notifications', 'uncle_toucheys', "API Key Error for ".$accountInfo['username'].": ".$keyErrorMessage." Affected API keyID: ".$this->keyID, 'aura', 'chat.postMessage');
+			sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', 'uncle_toucheys', "API Key Error for ".$accountInfo['username'].": ".$keyErrorMessage." Affected API keyID: ".$this->keyID, 'aura', 'chat.postMessage');
 		}
 
 		return $keyErrorMessage;
@@ -269,7 +267,7 @@ class ApiKey {
 				$stmt->execute(array($this->uid));
 				$accountInfo = $stmt->fetch();
 
-				sendComplexSlackNotification($settings->getSlackAuthToken(), 'DOGFT Auth Notifications', 'uncle_toucheys', "API Key Error: Invalid Access Mask | User: ".$accountInfo['username']." | keyID: ".$this->keyID, 'aura', 'chat.postMessage');
+				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', 'uncle_toucheys', "API Key Error: Invalid Access Mask | User: ".$accountInfo['username']." | keyID: ".$this->keyID, 'aura', 'chat.postMessage');
 			}
 			return FALSE;
 		}

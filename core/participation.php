@@ -165,9 +165,9 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 								</td>
 								<td>
 									<form method="post" action="/participation/add/manual/<?php echo $account['uid']; ?>/">
-										<input type="text" class="form-control" style="width: 75%; float: left" name="participation_update" value="<?php echo $participation_total; ?>">
+										<input type="text" class="form-control" name="participation_update" value="<?php echo $participation_total; ?>">
 										<input type="hidden" name="participation_period" value="<?php echo $time_period; ?>">	
-										<input type="submit" class="btn btn-primary btn-sm" style="margin-left: 5px; float: left; clear: right" value="Update">
+										<input type="submit" class="btn btn-primary btn-sm" value="Update">
 									</form>
 								</td>
 								<?php

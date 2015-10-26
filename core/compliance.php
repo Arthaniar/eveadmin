@@ -45,11 +45,25 @@ if($request['action'] == 'api') {
 	$stmt_api = $db->prepare('SELECT * FROM user_apikeys WHERE userid = ?');
 
 } elseif($request['action'] == 'doctrine') {
-	$compliance_type = 'doctrine';
+	$compliance_type = 'Doctrine';
+
+	// Getting all of the doctrines for the group
+	$stmt = $db->prepare('SELECT * FROM doctrines WHERE gid = ? ORDER BY doctrine_name ASC');
+	$stmt->execute(array($user->getGroup()));
+	$doctrineList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	// Set the iterative that we'll use for tab functionality to 0
+	$doctrineIterative = 0;
 
 } elseif($request['action'] == 'skill') {
-	$compliance_type = 'skill';
-	
+	$compliance_type = 'Skill';
+
+	// Getting all of our skill plans
+	$stmt = $db->prepare('SELECT * FROM skillplan_main WHERE gid = ? ORDER BY skillplan_order ASC');
+	$stmt->execute(array($user->getGroup()));
+	$skillPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+	// Setting the iterative that we will use for collapse groups to 0
+	$skillPlanIterative = 0;
 }
 ?>
 <div class="opaque-container">
@@ -155,14 +169,168 @@ if($request['action'] == 'api') {
 			                    		</td>
 			                    	</tr>
 			                    <?php
+							} else {
+								?>
+								<tr class="opaque-danger">
+									<td><?php echo $member['name']; ?></td>
+									<td style="text-align: center">No Account</td>
+									<td style="text-align: center">No API Key</td>
+									<td style="text-align: center">---</td>
+									<td style="text-align: center">---</td>
+									<td style="text-align: center">---</td>
+									<td style="text-align: center">---</td>
+								</tr>
+								<?php
 							}
 						}
 						?>
 						</tbody>
 						<?php
-					} elseif($compliance_type == "doctrine") {
-
-					} elseif($compliance_type == 'skill')
+					} elseif($compliance_type == "Doctrine") {
+						?>
+						<div class="tab-content col-md-9">
+						<?php
+						// Looping through the doctrines to create the fittings panes
+						$doctrineIterative = 0;
+						$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? ORDER BY fitting_name ASC');
+						foreach($doctrineList as $doctrine) {
+						  $stmt->execute(array($doctrine['doctrineid']));
+						  $fittingList = $stmt->fetchAll(PDO::FETCH_ASSOC);
+						  if($doctrineIterative == 0) {
+						    $fittingClass = 'active';
+						  } else {
+						    $fittingClass = '';
+						  }
+						  ?>
+						  <div role="tabpanel" class="tab-pane <?php echo $fittingClass; ?>" id="tab<?php echo $doctrineIterative; ?>">
+						  <?php
+						  $stmtFits = $db->prepare('SELECT * FROM doctrines_tracking WHERE fittingid = ? AND gid = ? ORDER BY character_name ASC');
+						  foreach($fittingList as $fitting) {
+						    $stmtFits->execute(array($fitting['fittingid'], $user->getGroup()));
+						    $skillResults = $stmtFits->fetchAll(PDO::FETCH_ASSOC);
+						    ?>
+						    <h3 style="text-align: center; margin-top: 0px">
+						      <?php echo $fitting['fitting_name'].' '.$eve->getTypeName($fitting['fitting_ship']); ?>
+						    </h3>
+						    <div class="panel panel-default">
+						      <table class="table">
+						        <tr>
+						          <th style="background-color: #010102"></th>
+						          <th style="background-color: #010102; text-align: center">Character Name</th>
+						          <th style="background-color: #010102; text-align: center">Owner</th>
+						          <th style="background-color: #010102; text-align: center">Trained Skills</th>
+						          <th style="background-color: #010102; text-align: center">Required Skills </th>
+						        </tr>
+						        <?php
+						        foreach($skillResults as $result) {
+						          $stmtCharacter = $db->prepare('SELECT * FROM characters WHERE charid = ? LIMIT 1');
+						          $stmtCharacter->execute(array($result['charid']));
+						          $charInfo = $stmtCharacter->fetch(PDO::FETCH_ASSOC);
+						          $stmtAccount = $db->prepare('SELECT * FROM user_accounts WHERE uid = ? LIMIT 1');
+						          $stmtAccount->execute(array($charInfo['uid']));
+						          $accountInfo = $stmtAccount->fetch(PDO::FETCH_ASSOC);
+						          $ownerAccount = $accountInfo['username'];
+						          if($result['color_status'] == 'success') {
+						            $iconClass = 'class="exceedsreq"';
+						            $colorClass = 'class="goodColorBack"';
+						          } elseif($result['color_status'] == 'warning') {
+						            $iconClass = 'class="belowreq"';
+						            $colorClass = 'class="okayColorBack"';
+						          } else {
+						            $iconClass = 'class="nottrained"';
+						            $colorClass = 'class="badColorBack"';
+						          }
+						          ?>
+						          <tr <?php echo $colorClass; ?>>
+						            <td <?php echo $iconClass; ?>></td>
+						            <td style="text-align: center; color: #f5f5f5"><?php echo $result['character_name']; ?></td>
+						            <td style="text-align: center; color: #f5f5f5"><?php echo $ownerAccount; ?></td>
+						            <td style="text-align: center; color: #f5f5f5"><?php echo $result['usable_items']; ?></td>
+						            <td style="text-align: center; color: #f5f5f5"><?php echo $result ['total_items']; ?></td>
+						          </tr>
+						        <?php
+						        }
+						      ?>
+						      </table>
+						    </div>
+						    <?php
+						  }
+						  ?>
+						  </div>
+						  <?php
+						  $doctrineIterative++;
+						}
+						?>
+						</div>
+						<?php
+					} elseif($compliance_type == 'Skill') {
+						?>
+						 <div class="tab-content col-md-9">
+						    <?php
+						    // Looping through the skill plans to create the subgroup panes
+						    $skillPlanIterative = 0;
+						    $stmt = $db->prepare('SELECT * FROM skillplan_subgroups WHERE skillplan_id = ? ORDER BY subgroup_order ASC');
+						    foreach($skillPlans as $plan) {
+						      $stmt->execute(array($plan['skillplan_id']));
+						      $subGroups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+						      if($skillPlanIterative == 0) {
+						        $planClass = 'active';
+						      } else {
+						        $planClass = '';
+						      }
+						      ?>
+						      <div role="tabpanel" class="tab-pane <?php echo $planClass; ?>" id="tab<?php echo $skillPlanIterative; ?>">
+							      <?php
+							      $stmtSkills = $db->prepare('SELECT * FROM skillplan_tracking WHERE subgroup_id = ? ORDER BY character_name ASC');
+							      foreach($subGroups as $subgroup) {
+							        ?>
+							        <h3 style="text-align: center; margin-top: 0px"><?php echo $subgroup['subgroup_name']; ?></h3>
+							        <div class="panel panel-default">
+							          <table class="table">
+							            <tr>
+							              <th style="background-color: #010102"></th>
+							              <th style="background-color: #010102; text-align: center">Character Name</th>
+							              <th style="background-color: #010102; text-align: center">Skills Met</th>
+							              <th style="background-color: #010102; text-align: center">Total Skills</th>
+							            </tr>
+							            <?php
+							            $stmtSkills->execute(array($subgroup['subgroup_id']));
+							            $skills = $stmtSkills->fetchAll(PDO::FETCH_ASSOC);
+							            foreach($skills as $skill) {
+							           
+							              if($skill['skills_trained'] >= $skill['skills_total']) {
+							                $iconClass = 'class="meetsreq"';
+							                $colorClass = 'class="goodColorBack"';
+							              } elseif($skill['skills_trained'] < $skill['skills_total'] AND $skill['skills_trained'] != 0) {
+							                $iconClass = 'class="belowreq"';
+							                $colorClass = 'class="okayColorBack"';
+							              } elseif($skill['skills_trained'] == 0) {
+							                $iconClass = 'class="nottrained"';
+							                $colorClass = 'class="badColorBack"';
+							              }
+							              ?>
+							              <tr <?php echo $colorClass; ?>>
+							                <td <?php echo $iconClass; ?>></td>
+							                <td style="text-align: center;"><a href="group.php?page=plans&view=<?php echo $skill['charid'];?>" style="color: #f5f5f5"><?php echo $skill['character_name']; ?></a></td>
+							                <td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_trained']; ?></td>
+							                <td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_total']; ?></td>
+							              </tr>
+							              <?php
+							            }
+							            ?>
+							          </table>
+							        </div>
+							        <?php
+							      }
+							      ?>
+						      </div>
+						      <?php
+						      $skillPlanIterative++;
+						    }
+						    ?>
+						  </div>
+						  <?php
+					}
 					?>
 				</table>
 			</div>

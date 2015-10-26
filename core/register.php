@@ -144,7 +144,7 @@ if(isset($_POST['username'])) {
 			</div>
 			<?php
 		} elseif($request['action'] == '4') {
-			if($register_sccess) {
+			if($register_success) {
 				?>
 				<div class="col-md-offset-3 col-md-6 col-sm-offset-2 col-sm-8 mobile-reconfig" style="padding-right: 0px">
 					<?php showAlerts(); ?>

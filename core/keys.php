@@ -1,7 +1,4 @@
 <?php
-$stmt = $db->prepare('SELECT * FROM user_apikeys WHERE uid = ? ORDER BY userid ASC');
-$stmt->execute(array($user->getUID()));
-$apiKeys = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 if($request['action'] != NULL) {
 	if($request['action'] == 'refresh') {
@@ -50,7 +47,7 @@ if($request['action'] != NULL) {
 			$update = $key->updateApiKey();
 			if($update) {
 			    if($settings->getSlack()) {
-  					sendComplexSlackNotification($settings->getSlackAuthToken(), 'DOGFT Auth Notifications', 'uncle_toucheys', 'New API Key submitted by '.$user->getUserName().' with Access Mask of '.$key->getAccessMask().'.', 'aura', 'chat.postMessage');
+  					sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', 'uncle_toucheys', 'New API Key submitted by '.$user->getUserName().' with Access Mask of '.$key->getAccessMask().'.', 'aura', 'chat.postMessage');
 				}
 				foreach($key->getCharacters() as $character) {
 					$char = new Character($character['characterID'], $key->getKeyID(), $key->getVCode(), $key->getAccessMask(), $db, $user);
@@ -65,6 +62,10 @@ if($request['action'] != NULL) {
 		}
 	}
 } 
+
+$stmt = $db->prepare('SELECT * FROM user_apikeys WHERE uid = ? ORDER BY userid ASC');
+$stmt->execute(array($user->getUID()));
+$apiKeys = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 require_once('includes/header.php');
 ?>

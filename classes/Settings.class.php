@@ -21,8 +21,11 @@ class Settings {
 	private $forumsAddress;
 
 	private $slack;
+	private $slackAddress;
 	private $slackWebhook;
 	private $slackAuthToken;
+	private $slackOperationsNotifications;
+	private $slackAPINotifications;
 
 	public function __construct($db, $gid) {
 		$this->db = $db;
@@ -61,14 +64,19 @@ class Settings {
 			$this->forumsAddress = $settings['group_forums_address'];
 		}
 
-		if($settings['group_slack_address'] == '' OR $settings['group_slack_address'] === NULL) {
+		if($settings['group_slack_integration'] === FALSE) {
 			$this->slack = FALSE;
 			$this->slackWebhook = FALSE;
 			$this->slackAuthToken = FALSE;
+			$this->slackOperationsNotifications = FALSE;
+			$this->slackAPINotifications = FALSE;
 		} else {
 			$this->slack = TRUE;
+			$this->slackAddress = $settings['group_slack_address'];
 			$this->slackWebhook = $settings['group_slack_webhook'];
 			$this->slackAuthToken = $settings['group_slack_auth_token'];
+			$this->slackOperationsNotifications = $settings['group_slack_ops_notifications'];
+			$this->slackAPINotifications = $settings['group_slack_api_notifications'];
 		}
 
 	}
@@ -133,6 +141,18 @@ class Settings {
 
 	public function getSlackAuthToken() {
 		return $this->slackAuthToken;
+	}
+
+	public function getSlackAPINotifications() {
+		return $this->slackAPINotifications;
+	}
+
+	public function getSlackOperationsNotifications() {
+		return $this->slackOperationsNotifications;
+	}
+
+	public function getSlackAddress() {
+		return $this->slackAddress;
 	}
 
 }

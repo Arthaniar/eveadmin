@@ -20,14 +20,16 @@ require_once('includes/header.php');
 							<label for="freighter_route">Jump Freighter Route:</label>
 							<select class="form-control" name="freighter_route" id="freighter_route">
 								<option style="background-color: rgb(24,24,24)" disabled>Select A Jump Freighter Route</option>
+								<option style="background-color: rgb(24,24,24)" disabled>Vale Of the Silent</option>
 								<option style="background-color: rgb(24,24,24)" value="200">FH-TTC <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" value="200">Q-EHMJ <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" value="200">7-K5EL <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" value="200">0-R5TS <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" disabled>Non-Standard Vale Systems</option>
 								<option style="background-color: rgb(24,24,24)" value="lsjep">LS-JEP <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" value="flatfee">Other Vale <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="150">Vale System<--> Vale System</option>
+								<option style="background-color: rgb(24,24,24)" value="150">Vale System <--> Vale System</option>
+								<option style="background-color: rgb(24,24,24)" disabled>LAWN Deployment</option>
+								<option style="background-color: rgb(24,24,24)" value="750">H-ADOC <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" disabled>Imperium Deployment Systems</option>
 								<option style="background-color: rgb(24,24,24)" value="dek-3v8">3V8-LJ <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" value="dek-ya0">YA0-XJ <--> Jita</option>
@@ -70,16 +72,20 @@ require_once('includes/header.php');
 							case 'dek-ya0':
 								$base_rate = 250;
 								$minimum_rate = 50000000;
+								$max_volume = 360000;
 								break;
 							case 'dek-3v8':
 								$base_rate = 250;
 								$minimum_rate = 50000000;
+								$max_volume = 360000;
 								break;
 							case 'vale-ya0':
 								$base_rate = 300;
 								$minimum_rate = 75000000;
+								$max_volume = 360000;
 								break;
 							case 'lsjep':
+								$max_volume = 360000;
 								if($user->getLoginStatus() AND $user->getUserAccess() AND $user->getGroup() == 1) {
 									$base_rate = 150;
 									$minimum_rate = 1;
@@ -88,9 +94,21 @@ require_once('includes/header.php');
 									$minimum_rate = 5000000;
 								}
 								break;
+							case '750':
+								if($_POST['total_volume'] > 120000) {
+									$base_rate = 1;
+									$minimum_rate = 250000000;
+									$max_volume = 120000;
+								} else {
+									$base_rate = 750;
+									$minimum_rate = 25000000;
+									$max_volume = 120000;
+								}
+								break;
 							default:
 								$base_rate = $_POST['freighter_route'];
 								$minimum_rate = 5000000;
+								$max_volume = 360000;
 								break;
 						endswitch;
 
@@ -107,14 +125,19 @@ require_once('includes/header.php');
 					}
 
 					// Confirming the total volume is correct
-					if($_POST['total_volume'] > 360000) {
-						$volume_display = '<span class="label label-danger">Over Volume Limit - '.number_format($_POST['total_volume']).'m3</span>';
-						$volume_modifier = 1;
+					if($_POST['total_volume'] > $max_volume) {
+						if($_POST['freighter_route'] == 750) {
+							$volume_display	= '<span class="label label-success" data-toggle="tooltip" data-placement="top" title="Contracts over 120,000 m3 get flat fee pricing up to 360,000 m3">'.number_format($_POST['total_volume']).'</span>';
+							$volume_modifier = 1;
+						} else {
+							$volume_display = '<span class="label label-danger">Over Volume Limit - '.number_format($_POST['total_volume']).'m3</span>';
+							$volume_modifier = 1;
+						}
 					} elseif($_POST['total_volume'] % 120000 == 0) {
 						$volume_display = '<span class="label label-success" data-toggle="tooltip" data-placement="top" title="Alright! You get a 5% discount for packing like a pro!">'.number_format($_POST['total_volume']).'m3</span>';
 						$volume_modifier = 0.95;
 					} else {
-						$volume_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="Consider packing in multiples of 120,000 m3 for a 5% discount!">'.number_format($_POST['total_volume']).'m3</span>';
+						$volume_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="Consider packing in multiples of 120,000 m3 for a 5% discount! (not applicable for deployment systems)">'.number_format($_POST['total_volume']).'m3</span>';
 						$volume_modifier = 1;
 					}
 
