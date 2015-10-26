@@ -1,0 +1,10 @@
+Options +FollowSymLinks
+
+RewriteEngine On
+
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteCond %{SCRIPT_FILENAME} !-f
+RewriteRule . /index.php [L]
