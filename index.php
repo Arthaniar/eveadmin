@@ -49,6 +49,8 @@ if($user->getLoginStatus()) {
 			$authentication = $user->getUserAccess();
 			break;
 		case 'search':
+		case 'info':
+		case 'spycheck':
 			// Fall through for Director Access
 		case 'compliance':
 			// Fall through for Director Access
