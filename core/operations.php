@@ -26,7 +26,7 @@ if(isset($_POST['operation_name'])) {
                        $fittingsList,
                        $_POST['operation_details']));
   if($settings->getSlack()) {
-    sendSlackNotification($settings->getGroupTicker().' Operations Calendar', $settings->getSlackOpsChannel, 'New Fleet Op Posted: '.$_POST['operation_name'].' - '.$_POST['operation_date'].' @ '.$_POST['operation_time'].' FCed by '.$_POST['operation_fc'].'. Form up in '.$_POST['operation_rally'].' on '.$_POST['operation_comms'], 'aura', $settings->getSlackWebhook());
+    sendSlackNotification($settings->getGroupTicker().' Operations Calendar', $settings->getSlackOpsChannel(), 'New Fleet Op Posted: '.$_POST['operation_name'].' - '.$_POST['operation_date'].' @ '.$_POST['operation_time'].' FCed by '.$_POST['operation_fc'].'. Form up in '.$_POST['operation_rally'].' on '.$_POST['operation_comms'], 'aura', $settings->getSlackWebhook());
     setAlert('success', 'New Operation Created and Posted To Slack', '');
   } else {
     setAlert('success', 'New Operation Created', '');
