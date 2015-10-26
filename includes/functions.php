@@ -437,7 +437,7 @@ function sendSlackInvite($email, $username, $token) {
 
 	$fields = array(
 			'email' => urlencode($email),
-			'channels' => urlencode('C09E811J5,C09E883ED'),
+			'channels' => urlencode($settings->getSlackMainChannel()),
 			'first_name' => $username,
 			'token' => $token,
 			'set_active' => urlencode('true'),

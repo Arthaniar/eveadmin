@@ -26,6 +26,9 @@ class Settings {
 	private $slackAuthToken;
 	private $slackOperationsNotifications;
 	private $slackAPINotifications;
+	private $slackMainChannel;
+	private $slackAPIChannel;
+	private $slackOpsChannel;
 
 	public function __construct($db, $gid) {
 		$this->db = $db;
@@ -77,6 +80,9 @@ class Settings {
 			$this->slackAuthToken = $settings['group_slack_auth_token'];
 			$this->slackOperationsNotifications = $settings['group_slack_ops_notifications'];
 			$this->slackAPINotifications = $settings['group_slack_api_notifications'];
+			$this->slackMainChannel = $settings['group_slack_main_channel'];
+			$this->slackAPIChannel = $settings['group_slack_api_channel'];
+			$this->slackOpsChannel = $settings['group_slack_ops_channel'];
 		}
 
 	}
@@ -154,5 +160,16 @@ class Settings {
 	public function getSlackAddress() {
 		return $this->slackAddress;
 	}
+
+	public function getSlackMainChannel() {
+		return $this->slackMainChannel;
+	}
+	public function getSlackAPIChannel() {
+		return $this->slackAPIChannel;
+	}
+	public function getSlackOpsChannel() {
+		return $this->slackOpsChannel;
+	}
+
 
 }
