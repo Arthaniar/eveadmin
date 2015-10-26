@@ -4,16 +4,6 @@ require_once('includes/header.php');
 if($request['action'] == 'apis') {
 	$page_type = "API";
 
-	if($user->getAdminAccess()) {
-		$stmt = $db->prepare('SELECT * FROM user_apikeys JOIN user_accounts ON user_apikeys.uid = user_accounts.uid ORDER BY user_accounts.username ASC');
-		$stmt->execute(array());
-		$keys = $stmt->fetchAll(PDO::FETCH_ASSOC);
-	} else {
-		$stmt = $db->prepare('SELECT * FROM user_apikeys JOIN user_accounts ON user_apikeys.uid = user_accounts.uid WHERE user_accounts.gid = ? ORDER BY user_accounts.username ASC');
-		$stmt->execute(array($user->getGroup()));
-		$keys = $stmt->fetchAll(PDO::FETCH_ASSOC);
-	}
-
 	if($request['value'] == 'refresh') {
 
 		$keyID = $request['value_2'];
@@ -56,6 +46,16 @@ if($request['action'] == 'apis') {
 		}	
 	} elseif($request['value'] == 'delete') {
 		
+	}
+
+	if($user->getAdminAccess()) {
+		$stmt = $db->prepare('SELECT * FROM user_apikeys JOIN user_accounts ON user_apikeys.uid = user_accounts.uid ORDER BY user_accounts.username ASC');
+		$stmt->execute(array());
+		$keys = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	} else {
+		$stmt = $db->prepare('SELECT * FROM user_apikeys JOIN user_accounts ON user_apikeys.uid = user_accounts.uid WHERE user_accounts.gid = ? ORDER BY user_accounts.username ASC');
+		$stmt->execute(array($user->getGroup()));
+		$keys = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	}
 } elseif($request['action'] == 'characters') {
 	$page_type = "Character";
@@ -122,7 +122,7 @@ if($request['action'] == 'apis') {
 								<td><?php foreach($characters as $character) { ?><img style="margin-left: 2px; margin-right: 2px" data-toggle="tooltip" data-placement="top" title="<?php echo $character['charactername']; ?> | <?php echo $character['corporation']; ?> | <?php echo $character['alliance']; ?>" src="<?php echo Character::getCharacterImage($character['charid'], 30); ?>"><?php } ?></td>
 								<td><?php echo $key_status; ?></td>
 								<td>
-									<a href="/info/apis/refresh/<?php echo $key['userid']; ?>/" class="btn btn-success"><span class="glyphicon glyphicon-refresh"></span></a>
+									<a href="/info/apis/refresh/<?php echo $key['userid']; ?>/" class="btn btn-primary"><span class="glyphicon glyphicon-refresh"></span></a>
 									<a href="/info/apis/delete/<?php echo $key['userid']; ?>/" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></a>
 								</td>
 							</tr>
