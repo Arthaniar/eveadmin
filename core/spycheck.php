@@ -2,22 +2,24 @@
 // We are using $defining UID here temporarily while testing.
 if(isset($_POST['evaluation']) AND ($user->getDirectorAccess() OR $user->getHumanResourcesAccess())) {
 	$userAccountID = $_POST['evaluation'];
+} elseif($request['value'] != NULL) {
+	$userAccountID = $request['value'];
 } else {
 	$userAccountID = $user->getUID();
 }
 // Getting the account information for the account we're trying to Spycheck
-$stmt = $db->prepare('SELECT * FROM user_accounts WHERE uid = ? LIMIT 1');
+$stmt = $db->prepare('SELECT gid FROM user_accounts WHERE uid = ? LIMIT 1');
 $stmt->execute(array($userAccountID));
 $accountInfo = $stmt->fetch(PDO::FETCH_ASSOC);
 // Confirming that the user doing the checking is either a Director or HR and that they are in the same group as the person they're checking
 if($user->getDirectorAccess() OR $user->getHumanResourcesAccess() AND $user->getGroup == $accountInfo['gid']) {
 	// Getting the list of characters for future use
-	$stmt = $db->prepare('SELECT * FROM characters WHERE uid = ? ORDER BY charactername ASC');
+	$stmt = $db->prepare('SELECT charid,charactername FROM characters WHERE uid = ? ORDER BY charactername ASC');
 	$stmt->execute(array($userAccountID));
 	$characterArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
 	// They are not requesting someone they can access, so they get to see themselves instead!
-	$stmt = $db->prepare('SELECT * FROM characters WHERE uid = ? ORDER BY charactername ASC');
+	$stmt = $db->prepare('SELECT charid,charactername FROM characters WHERE uid = ? ORDER BY charactername ASC');
 	$stmt->execute(array($user->getUID()));
 	$characterArray = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -32,8 +34,8 @@ require_once('includes/header.php');
     <div class="row" style="width: 100%; margin-top: 20px; margin-bottom: 20px">
 		<div class="col-md-12 opaque-section" style="padding: 0px">
 			<div class="row box-title-section" style="margin-bottom: 25px">
-				<h1 style="text-align: center">DOGFT Spychecker</h1>
-				<h3 style="text-align: center">jackash, if you will...</h3>
+				<h1 style="text-align: center">Applicant Evaluator & Spychecker</h1>
+				<h3 style="text-align: center">Automated Account Spychecking and Recruitment Evaluations...</h3>
 			</div>
 			<?php showAlerts(); ?>
 			<div class="row" style="padding-left: 10px; padding-right: 10px">
@@ -41,12 +43,15 @@ require_once('includes/header.php');
 
 			  	<!-- Spychecker Navigation Tabs -->
 				<ul class="nav nav-pills nav-stacked col-md-2" role="tablist" style="border-bottom: none">
+					<?php
+					if($user->getDirectorAccess()) {
+					?>
 					<li role="presentation">
 						<form action="/spycheck/" method="post">
 							<select name="evaluation" onchange="this.form.submit()" style="color: #333; margin-bottom: 4px">
 								<option value="">Select Account</option>
 								<?php 
-								$stmt = $db->prepare('SELECT * FROM user_accounts WHERE gid = ?');
+								$stmt = $db->prepare('SELECT uid,username FROM user_accounts WHERE gid = ?');
 								$stmt->execute(array($user->getGroup()));
 								$accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 								foreach($accounts as $account) {
@@ -56,19 +61,25 @@ require_once('includes/header.php');
 							</select>
 						</form>
 					</li>
-			    	<li role="presentation" class="active"><a href="#tabX" aria-controls="tabX" role="tab" data-toggle="tab">Overview</a></li>
-			    	<li role="presentation"><a href="#tabY" aria-controls="tabY" role="tab" data-toggle="tab">Interactions</a></li>
-			    	<li role="presentation"><a href="#tabZ" aria-controls="tabZ" role="tab" data-toggle="tab">Skills Compliance</a></li>
-			    	<li role="presentation"><a href="#tabW" aria-controls="tabW" role="tab" data-toggle="tab">Doctrine Compliance</a></li>
-			    	<li role="presentation"><a href="#tabA" aria-controls="tabA" role="tab" data-toggle="tab">Assets / ISK</a></li>
-			    	<li role="presentation"><a href="#tabB" aria-controls="tabB" role="tab" data-toggle="tab">Killboard Stats</a></li>
-			    	<li role="presentation"><a href="#tabC" aria-controls="tabC" role="tab" data-toggle="tab">Forum Activity</a></li>
+					<?php
+					}
+					?>
+			    	<li role="presentation" <?php if($request['action'] == NULL) { echo 'class="active"'; } ?>><a href="/spycheck/overview/<?php echo $userAccountID; ?>">Overview</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'ineractions') { echo 'class="active"'; } ?>><a href="/spycheck/interactions/<?php echo $userAccountID; ?>">Interactions</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'skills') { echo 'class="active"'; } ?>><a href="/spycheck/skills/<?php echo $userAccountID; ?>">Skills Compliance</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'doctrines') { echo 'class="active"'; } ?>><a href="/spycheck/doctrines/<?php echo $userAccountID; ?>">Doctrine Compliance</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'assets') { echo 'class="active"'; } ?>><a href="/spycheck/assets/<?php echo $userAccountID; ?>">Assets</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'isk') { echo 'class="active"'; } ?>><a href="/spycheck/isk/<?php echo $userAccountID; ?>">ISK and Contracts</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'killobard') { echo 'class="active"'; } ?>><a href="/spycheck/killboard/<?php echo $userAccountID; ?>">Killboard Activity</a></li>
 				</ul>
 
 				<!-- Spychecker Panes -->
-				<div class="tab-content col-md-10">
+				<div class="col-md-10">
+					<?php
+					if($request['action'] == 'overview' OR $request['action'] == NULL) {
+					?>
 					<!-- Overview Pane -->
-				    <div role="tabpanel" class="tab-pane active" id="tabX" style="margin-top: -25px">
+				    <div style="margin-top: -25px">
 				    	<h3 style="text-align: center">API Key Overview</h3>
 				    	<table class="table">
 				    		<tr>
@@ -176,10 +187,15 @@ require_once('includes/header.php');
 				        </div>
 				    </div>
 
+				    <?php
+				    } elseif($request['action'] == 'interactions') {
+				    ?>
+
 				    <!-- Interactions Pane -->
-				    <div role="tabpanel" class="tab-pane" id="tabY" style="margin-top: -25px">
+				    <div style="margin-top: -25px">
 						<div class="row box-title-section" style="margin-bottom: 10px">
 							<h3 style="text-align: center">Account Interactions</h3>
+							<h4>This may take several moments to fully load...</h4>
 						</div>
 						<div class="row">
 					        <div class="col-md-12">
@@ -366,8 +382,12 @@ require_once('includes/header.php');
 					    </div>
 				    </div>
 
+				    <?php
+				    } elseif($request['action'] == 'skills') {
+				    ?>
+
 				    <!-- Plans Pane -->
-				    <div role="tabpanel" class="tab-pane" id="tabZ" style="margin-top: -25px">
+				    <div style="margin-top: -25px">
 						<?php
 							$stmt = $db->prepare('SELECT * FROM skillplan_main WHERE gid = ? ORDER BY skillplan_order ASC');
 							$stmt->execute(array($user->getGroup()));
@@ -376,146 +396,191 @@ require_once('includes/header.php');
 							$stmtSkills = $db->prepare('SELECT * FROM skillplan_tracking WHERE subgroup_id = ? AND charid = ?');
 							$i = 0;
 							foreach($skillPlans as $plan) {
+								$i_rows = 1;
 								$stmtSubGroups->execute(array($plan['skillplan_id']));
 								$subGroups = $stmtSubGroups->fetchAll(PDO::FETCH_ASSOC);
+								$groupsCount = count($subGroups);
 								?>
-								<h3 style="text-align: center"><?php echo $plan['skillplan_name']; ?></h3>
-									<?php
-									foreach($subGroups as $subgroup) {
-										?>
+								<div class="opaque-container panel-group" style="width: 100%; margin-top: 20px; margin-bottom: 20px" id="<?php echo $plan['skillplan_id']; ?>" role="tablist" aria-multiselectable="true">
+									<div class="row">
+										<div class="col-md-12 opaque-section">
+											<div class="row bog-title-section" style="margin-bottom: 10px" role="tab" id="<?php echo $plan['skillplan_id']; ?>planHeading>">
+												<a class="box-title-link" style="text-decoration: none" role="button" data-toggle="collapse" data-parent="<?php echo $plan['skillplan_id']; ?>plan" href="#collapse<?php echo $plan['skillplan_id']; ?>plan" aria-expanded="true" aria-controls="collapse<?php echo $plan['skillplan_id']; ?>">
+													<h2 class="eve-text" style="margin-top: 0px; text-align: center; font-size: 200%; font-weight: 700"><?php echo $plan['skillplan_name']; ?> Plan</h2>
+												</a>
+											</div>
+											<div id="collapse<?php echo $plan['skillplan_id']; ?>plan" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="<?php echo $plan['skillplan_id']; ?>planHeading">
+												<?php
+												foreach($subGroups as $subgroup) {
+													if($i_rows % 2 == 1) {
+														?><div class="row"><?php
+													}
+													?>
+											        <div class="col-md-6 col-sm-12" style="background-image: none" id="<?php echo $subgroup['subgroup_name'].'-'.$plan['skillplan_name']; ?>" role="tablist" aria-multiselectable="true">
+											          	<div style="vertical-align: middle">
+											            	<div class="row box-title-section" role="tab" id="heading<?php echo $i; ?>" style="text-align: center; background-image: none; background-color: transparent; font-size: 150%; padding-top: 5px; padding-bottom: 5px">
+											              		<a style="text-decoration: none; color: #f5f5f5; font-weight: 700" role="button" data-toggle="collapse" data-parent="<?php echo $subgroup['subgroup_name'].'-'.$plan['skillplan_name']; ?>" href="#collapse<?php echo $i; ?>" aria-expanded="true" aria-controls="collapse<?php echo $i; ?>">
+											              			<h2 class="eve-text" style="font-size: 120%"><?php echo $subgroup['subgroup_name']; ?></h2>
+											              		</a>
+											            	</div>
+											            	<div id="collapse<?php echo $i; ?>" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading<?php echo $i; ?>">
+											              		<table class="table table-striped">
+													              	<tr>
+													              		<th></th>
+																		<th style="text-align: center">Character Name</th>
+																		<th style="text-align: center">Skills Meeting Requirements</th>
+																		<th style="text-align: center">Total Skills</th>
+													                </tr>
+																	<?php
+																	foreach($characterArray as $character) {
+																		$stmtSkills->execute(array($subgroup['subgroup_id'], $character['charid']));
+																		$skillsInfo = $stmtSkills->fetchAll(PDO::FETCH_ASSOC);
+																		foreach($skillsInfo as $skill) {
+																			if($skill['skills_trained'] >= $skill['skills_total']) {
+																				$iconClass = 'class="skill-meets-requirement"';
+																				$colorClass = 'class="opaque-success"';
+																			} elseif($skill['skills_trained'] < $skill['skills_total'] AND $skill['skills_trained'] != 0) {
+																				$iconClass = 'class="skill-below-requirement"';
+																				$colorClass = 'class="opaque-warning"';
+																			} elseif($skill['skills_trained'] == 0) {
+																				$iconClass = 'class="skill-not-trained"';
+																				$colorClass = 'class="opaque-danger"';
+																			}
+																			?>
+																			<tr <?php echo $colorClass; ?>>
+																				<td <?php echo $iconClass; ?>></td>
+																				<td style="text-align: center;"><a href="group.php?page=plans&view=<?php echo $skill['charid'];?>" style="color: #f5f5f5"><?php echo $skill['character_name']; ?></a></td>
+																				<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_trained']; ?></td>
+																				<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_total']; ?></td>
+																			</tr>
 
-								        <div class="panel-group" id="<?php echo $subgroup['subgroup_name'].'-'.$plan['skillplan_name']; ?>" role="tablist" aria-multiselectable="true">
-								          	<div class="panel panel-default" style="vertical-align: middle">
-								            	<div class="panel-heading box-title-section" role="tab" id="heading<?php echo $i; ?>" style="text-align: center; background-image: none; background-color: transparent; font-size: 150%; padding-top: 5px; padding-bottom: 5px">
-								              		<h2 class="panel-title" style="font-size: 120%">
-								                		<a role="button" data-toggle="collapse" data-parent="<?php echo $subgroup['subgroup_name'].'-'.$plan['skillplan_name']; ?>" href="#collapse<?php echo $i; ?>" aria-expanded="true" aria-controls="collapse<?php echo $i; ?>"><?php echo $subgroup['subgroup_name']; ?></a>
-								              		</h2>
-								            	</div>
-								            	<div id="collapse<?php echo $i; ?>" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading<?php echo $i; ?>">
-								              		<table class="table table-striped">
-										              	<tr>
-										              		<th></th>
-															<th style="text-align: center">Character Name</th>
-															<th style="text-align: center">Skills Meeting Requirements</th>
-															<th style="text-align: center">total Skills</th>
-										                </tr>
-														<?php
-														foreach($characterArray as $character) {
-															$stmtSkills->execute(array($subgroup['subgroup_id'], $character['charid']));
-															$skillsInfo = $stmtSkills->fetchAll(PDO::FETCH_ASSOC);
-															foreach($skillsInfo as $skill) {
-																if($skill['skills_trained'] >= $skill['skills_total']) {
-																	$iconClass = 'class="skill-meets-requirement"';
-																	$colorClass = 'class="opaque-success"';
-																} elseif($skill['skills_trained'] < $skill['skills_total'] AND $skill['skills_trained'] != 0) {
-																	$iconClass = 'class="skill-below-requirement"';
-																	$colorClass = 'class="opaque-warning"';
-																} elseif($skill['skills_trained'] == 0) {
-																	$iconClass = 'class="skill-not-trained"';
-																	$colorClass = 'class="opaque-danger"';
-																}
-																?>
-																<tr <?php echo $colorClass; ?>>
-																	<td <?php echo $iconClass; ?>></td>
-																	<td style="text-align: center;"><a href="group.php?page=plans&view=<?php echo $skill['charid'];?>" style="color: #f5f5f5"><?php echo $skill['character_name']; ?></a></td>
-																	<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_trained']; ?></td>
-																	<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_total']; ?></td>
-																</tr>
-
-																<?php
-															}
-														}
-														?>
-								              		</table>
-								            	</div>
-								          	</div>
-								        </div>
-										<?php
-										$i++;
-									}
-									?>
-								<hr /><br /><br />
+																			<?php
+																		}
+																	}
+																	?>
+											              		</table>
+											            	</div>
+											          	</div>
+											        </div>
+													<?php
+													$i++;
+													if($i_rows % 2 == 0 OR $i_rows == $groupsCount) {
+														?></div><?php
+													}
+													$i_rows++;
+												}
+												?>
+											</div>
+										</div>
+									</div>
+								</div>
 								<?php
 							}
 						?>
 				    </div>
 
-					<!-- Doctrines Pane -->
-				    <div role="tabpanel" class="tab-pane" id="tabW" style="margin-top: -25px">
+				    <?php
+				    } elseif($request['action'] == 'doctrines') {
+				    ?>
+
+				    <!-- Doctrines Pane -->
+				    <div style="margin-top: -25px">
 						<?php
-							$stmt = $db->prepare('SELECT * FROM skillplan_main WHERE gid = ? ORDER BY skillplan_order ASC');
+							$stmt = $db->prepare('SELECT doctrineid,doctrine_name FROM doctrines WHERE gid = ? ORDER BY doctrine_name ASC');
 							$stmt->execute(array($user->getGroup()));
-							$skillPlans = $stmt->fetchAll(PDO::FETCH_ASSOC);
-							$stmtSubGroups = $db->prepare('SELECT * FROM skillplan_subgroups WHERE skillplan_id = ? ORDER BY subgroup_order ASC');
-							$stmtSkills = $db->prepare('SELECT * FROM skillplan_tracking WHERE subgroup_id = ? AND charid = ?');
+							$doctrines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+							$stmt_fittings = $db->prepare('SELECT fittingid,fitting_name,fitting_ship FROM doctrines_fits WHERE doctrineid = ? ORDER BY fitting_priority DESC');
+							$stmt_tracking = $db->prepare('SELECT characters.charid,characters.charactername,usable_items,total_items,color_status FROM characters JOIN doctrines_tracking ON characters.charid = doctrines_tracking.charid WHERE characters.uid = ? AND doctrines_tracking.fittingid = ? ORDER BY characters.skillpoints DESC');
+
 							$i = 0;
-							foreach($skillPlans as $plan) {
-								$stmtSubGroups->execute(array($plan['skillplan_id']));
-								$subGroups = $stmtSubGroups->fetchAll(PDO::FETCH_ASSOC);
+							foreach($doctrines as $doctrine) {
+								$i_doctrines = 1;
+								$stmt_fittings->execute(array($doctrine['doctrineid']));
+								$fittings = $stmt_fittings->fetchAll(PDO::FETCH_ASSOC);
+
+								$fittingsCount = count($fittings);
 								?>
-								<h3 style="text-align: center"><?php echo $plan['skillplan_name']; ?></h3>
-									<?php
-									foreach($subGroups as $subgroup) {
-										?>
-
-								        <div class="panel-group" id="<?php echo $subgroup['subgroup_name'].'-'.$plan['skillplan_name']; ?>" role="tablist" aria-multiselectable="true">
-								          	<div class="panel panel-default" style="vertical-align: middle">
-								            	<div class="panel-heading box-title-section" role="tab" id="heading<?php echo $i; ?>" style="text-align: center">
-								              		<h2 class="panel-title">
-								                		<a role="button" data-toggle="collapse" data-parent="<?php echo $subgroup['subgroup_name'].'-'.$plan['skillplan_name']; ?>" href="#collapse<?php echo $i; ?>" aria-expanded="true" aria-controls="collapse<?php echo $i; ?>"><?php echo $subgroup['subgroup_name']; ?></a>
-								              		</h2>
-								            	</div>
-								            	<div id="collapse<?php echo $i; ?>" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading<?php echo $i; ?>">
-								              		<table class="table">
-										              	<tr>
-										              		<th></th>
-															<th style="text-align: center">Character Name</th>
-															<th style="text-align: center">Skills Meeting Requirements</th>
-															<th style="text-align: center">total Skills</th>
-										                </tr>
-														<?php
-														foreach($characterArray as $character) {
-															$stmtSkills->execute(array($subgroup['subgroup_id'], $character['charid']));
-															$skillsInfo = $stmtSkills->fetchAll(PDO::FETCH_ASSOC);
-															foreach($skillsInfo as $skill) {
-																if($skill['skills_trained'] >= $skill['skills_total']) {
-																	$iconClass = 'class="meetsreq"';
-																	$colorClass = 'class="goodColorBack"';
-																} elseif($skill['skills_trained'] < $skill['skills_total'] AND $skill['skills_trained'] != 0) {
-																	$iconClass = 'class="belowreq"';
-																	$colorClass = 'class="okayColorBack"';
-																} elseif($skill['skills_trained'] == 0) {
-																	$iconClass = 'class="nottrained"';
-																	$colorClass = 'class="badColorBack"';
-																}
-																?>
-																<tr <?php echo $colorClass; ?>>
-																	<td <?php echo $iconClass; ?>></td>
-																	<td style="text-align: center;"><a href="group.php?page=plans&view=<?php echo $skill['charid'];?>" style="color: #f5f5f5"><?php echo $skill['character_name']; ?></a></td>
-																	<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_trained']; ?></td>
-																	<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_total']; ?></td>
-																</tr>
-
-																<?php
-															}
-														}
-														?>
-								              		</table>
-								            	</div>
-								          	</div>
-								        </div>
-										<?php
-										$i++;
-									}
-									?>
-								<hr /><br /><br />
+								<div class="opaque-container panel-group" style="width: 100%; margin-top: 20px; margin-bottom: 20px" id="<?php echo $doctrine['doctrineid']; ?>" role="tablist" aria-multiselectable="true">
+									<div class="row">
+										<div class="col-md-12 opaque-section">
+											<div class="row bog-title-section" style="margin-bottom: 10px" role="tab" id="<?php echo $doctrine['doctrineid']; ?>planHeading>">
+												<a class="box-title-link" style="text-decoration: none" role="button" data-toggle="collapse" data-parent="<?php echo $doctrine['doctrineid']; ?>plan" href="#collapse<?php echo $doctrine['doctrineid']; ?>plan" aria-expanded="true" aria-controls="collapse<?php echo $doctrine['doctrineid']; ?>">
+													<h2 class="eve-text" style="margin-top: 0px; text-align: center; font-size: 200%; font-weight: 700"><?php echo $doctrine['doctrine_name']; ?> Doctrine</h2>
+												</a>
+											</div>
+											<div id="collapse<?php echo $doctrine['doctrineid']; ?>plan" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="<?php echo $plan['skillplan_id']; ?>planHeading">
+												<?php
+												foreach($fittings as $fitting) {
+													$stmt_tracking->execute(array($userAccountID, $fitting['fittingid']));
+													$tracking = $stmt_tracking->fetchAll(PDO::FETCH_ASSOC);
+													if($i_doctrines % 2 == 1) {
+														?><div class="row"><?php
+													}
+													?>
+											        <div class="col-md-6 col-sm-12" style="background-image: none" id="<?php echo $fitting['fittingid']; ?>" role="tablist" aria-multiselectable="true">
+											          	<div style="vertical-align: middle">
+											            	<div class="row box-title-section" role="tab" id="heading<?php echo $i; ?>" style="text-align: center; background-image: none; background-color: transparent; font-size: 150%; padding-top: 5px; padding-bottom: 5px">
+											              		<a style="text-decoration: none; color: #f5f5f5; font-weight: 700" role="button" data-toggle="collapse" data-parent="<?php echo $fitting['fittingid']; ?>" href="#collapse<?php echo $i; ?>" aria-expanded="true" aria-controls="collapse<?php echo $i; ?>">
+											              			<h2 class="eve-text" style="font-size: 120%"><?php echo $fitting['fitting_name']; ?></h2>
+											              		</a>
+											            	</div>
+											            	<div id="collapse<?php echo $i; ?>" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading<?php echo $i; ?>">
+											              		<table class="table table-striped">
+											              			<tr>
+											              				<th>Character</th>
+											              				<th>Skills Met</th>
+											              				<th>Total Skills</th>
+											              			</tr>
+											              			<?php
+											              			foreach($tracking as $track) {
+											              				switch($track['color_status']):
+											              					case 'success':
+											              						$tr_class = 'opaque-success';
+											              						break;
+											              					case 'warning':
+											              						$tr_class = 'opaque-warning';
+											              						break;
+											              					default:
+											              						$tr_class = 'opaque-danger';
+											              						break;
+											              				endswitch;
+											              				?>
+											              				<tr <?php echo 'class="'.$tr_class.'"'; ?>>
+											              					<td><?php echo $track['charactername']; ?></td>
+											              					<td><?php echo $track['usable_items']; ?></td>
+											              					<td><?php echo $track['total_items']; ?></td>
+											              				</tr>
+											              				<?php
+											              			}
+											              			?>
+											              		</table>
+											            	</div>
+											          	</div>
+											        </div>
+													<?php
+													$i++;
+													if($i_doctrines % 2 == 0 OR $i_doctrines == $fittingsCount) {
+														?></div><?php
+													}
+													$i_doctrines++;
+												}
+												?>
+											</div>
+										</div>
+									</div>
+								</div>
 								<?php
 							}
 						?>
 				    </div>
 
-				    <!--  Pane -->
-				    <div role="tabpanel" class="tab-pane" id="tabA" style="margin-top: -25px">
+				    <?php
+				    } elseif($request['action'] == 'assets') {
+				    ?>
+
+				    <!--  Assets Pane -->
+				    <div style="margin-top: -25px">
 				        <h3 style="text-align: center">Assets and ISK</h3>
 				        <div class="panel panel-default">
 							<table class="table">
@@ -535,8 +600,12 @@ require_once('includes/header.php');
 				        </div>
 				    </div>
 
-				    <!--  Pane -->
-				    <div role="tabpanel" class="tab-pane" id="tabB" style="margin-top: -25px">
+				    <?php
+				    } elseif($request['action'] == 'isk') {
+				    ?>
+
+				    <!--  ISK Pane -->
+				    <div style="margin-top: -25px">
 				        <h3 style="text-align: center">Killboard Stats</h3>
 				        <div class="panel panel-default">
 							<table class="table">
@@ -556,8 +625,12 @@ require_once('includes/header.php');
 				        </div>
 				    </div>
 
-				    <!--  Pane -->
-				    <div role="tabpanel" class="tab-pane" id="tabC" style="margin-top: -25px">
+				    <?php
+				    } elseif($request['action'] == 'killboard') {
+				    ?>
+
+				    <!--  Killboard Pane -->
+				    <div style="margin-top: -25px">
 				        <h3 style="text-align: center">Forum Activity</h3>
 				        <div class="panel panel-default">
 							<table class="table">
@@ -577,6 +650,9 @@ require_once('includes/header.php');
 				        </div>
 				    </div>
 
+				    <?php
+					}
+					?>
 
 				</div>
 
