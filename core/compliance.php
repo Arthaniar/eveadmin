@@ -74,10 +74,10 @@ if($request['action'] == 'api') {
 			</div>
 			<?php showAlerts(); ?>
 			<div class="row" style="padding-left: 10px; padding-right: 10px">
-				<table class="table table-striped">
 					<?php
 					if($compliance_type == "API") {
 						?>
+						<table class="table table-striped">
 						<thead>
 							<tr>
 								<th>Character</th>
@@ -185,84 +185,113 @@ if($request['action'] == 'api') {
 						}
 						?>
 						</tbody>
+						</table>
 						<?php
 					} elseif($compliance_type == "Doctrine") {
-						?>
-						<div class="tab-content col-md-9">
-						<?php
-						// Looping through the doctrines to create the fittings panes
-						$doctrineIterative = 0;
-						$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? ORDER BY fitting_name ASC');
-						foreach($doctrineList as $doctrine) {
-						  $stmt->execute(array($doctrine['doctrineid']));
-						  $fittingList = $stmt->fetchAll(PDO::FETCH_ASSOC);
-						  if($doctrineIterative == 0) {
-						    $fittingClass = 'active';
-						  } else {
-						    $fittingClass = '';
-						  }
-						  ?>
-						  <div role="tabpanel" class="tab-pane <?php echo $fittingClass; ?>" id="tab<?php echo $doctrineIterative; ?>">
-						  <?php
-						  $stmtFits = $db->prepare('SELECT * FROM doctrines_tracking WHERE fittingid = ? AND gid = ? ORDER BY character_name ASC');
-						  foreach($fittingList as $fitting) {
-						    $stmtFits->execute(array($fitting['fittingid'], $user->getGroup()));
-						    $skillResults = $stmtFits->fetchAll(PDO::FETCH_ASSOC);
-						    ?>
-						    <h3 style="text-align: center; margin-top: 0px">
-						      <?php echo $fitting['fitting_name'].' '.$eve->getTypeName($fitting['fitting_ship']); ?>
-						    </h3>
-						    <div class="panel panel-default">
-						      <table class="table">
-						        <tr>
-						          <th style="background-color: #010102"></th>
-						          <th style="background-color: #010102; text-align: center">Character Name</th>
-						          <th style="background-color: #010102; text-align: center">Owner</th>
-						          <th style="background-color: #010102; text-align: center">Trained Skills</th>
-						          <th style="background-color: #010102; text-align: center">Required Skills </th>
-						        </tr>
-						        <?php
-						        foreach($skillResults as $result) {
-						          $stmtCharacter = $db->prepare('SELECT * FROM characters WHERE charid = ? LIMIT 1');
-						          $stmtCharacter->execute(array($result['charid']));
-						          $charInfo = $stmtCharacter->fetch(PDO::FETCH_ASSOC);
-						          $stmtAccount = $db->prepare('SELECT * FROM user_accounts WHERE uid = ? LIMIT 1');
-						          $stmtAccount->execute(array($charInfo['uid']));
-						          $accountInfo = $stmtAccount->fetch(PDO::FETCH_ASSOC);
-						          $ownerAccount = $accountInfo['username'];
-						          if($result['color_status'] == 'success') {
-						            $iconClass = 'class="exceedsreq"';
-						            $colorClass = 'class="goodColorBack"';
-						          } elseif($result['color_status'] == 'warning') {
-						            $iconClass = 'class="belowreq"';
-						            $colorClass = 'class="okayColorBack"';
-						          } else {
-						            $iconClass = 'class="nottrained"';
-						            $colorClass = 'class="badColorBack"';
-						          }
-						          ?>
-						          <tr <?php echo $colorClass; ?>>
-						            <td <?php echo $iconClass; ?>></td>
-						            <td style="text-align: center; color: #f5f5f5"><?php echo $result['character_name']; ?></td>
-						            <td style="text-align: center; color: #f5f5f5"><?php echo $ownerAccount; ?></td>
-						            <td style="text-align: center; color: #f5f5f5"><?php echo $result['usable_items']; ?></td>
-						            <td style="text-align: center; color: #f5f5f5"><?php echo $result ['total_items']; ?></td>
-						          </tr>
-						        <?php
-						        }
-						      ?>
-						      </table>
-						    </div>
-						    <?php
-						  }
-						  ?>
-						  </div>
-						  <?php
-						  $doctrineIterative++;
+
+						$stmt = $db->prepare('SELECT doctrineid,doctrine_name FROM doctrines WHERE gid = ? ORDER BY doctrine_name ASC');
+						$stmt->execute(array($user->getGroup()));
+						$doctrines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+						$stmt_fittings = $db->prepare('SELECT fittingid,fitting_name,fitting_ship FROM doctrines_fits WHERE doctrineid = ? ORDER BY fitting_priority DESC');
+						$stmt_accounts = $db->prepare('SELECT uid,username FROM user_accounts WHERE gid = ? ORDER BY username ASC');
+						$stmt_tracking = $db->prepare('SELECT characters.charid,characters.charactername,usable_items,total_items,color_status FROM characters JOIN doctrines_tracking ON characters.charid = doctrines_tracking.charid WHERE characters.uid = ? AND doctrines_tracking.fittingid = ? AND characters.skillpoints > 1000000 ORDER BY characters.skillpoints DESC');
+
+						$stmt_accounts->execute(array($user->getGroup()));
+						$accounts = $stmt_accounts->fetchAll(PDO::FETCH_ASSOC);
+
+						$i = 0;
+						foreach($doctrines as $doctrine) {
+							$i_doctrines = 1;
+							$stmt_fittings->execute(array($doctrine['doctrineid']));
+							$fittings = $stmt_fittings->fetchAll(PDO::FETCH_ASSOC);
+
+							$fittingsCount = count($fittings);
+							?>
+							<div class="opaque-container panel-group" style="width: 100%; margin-top: 20px; margin-bottom: 20px" id="<?php echo $doctrine['doctrineid']; ?>" role="tablist" aria-multiselectable="true">
+								<div class="row">
+									<div class="col-md-12 opaque-section">
+										<div class="row bog-title-section" style="margin-bottom: 10px" role="tab" id="<?php echo $doctrine['doctrineid']; ?>planHeading>">
+											<a class="box-title-link" style="text-decoration: none" role="button" data-toggle="collapse" data-parent="<?php echo $doctrine['doctrineid']; ?>plan" href="#collapse<?php echo $doctrine['doctrineid']; ?>plan" aria-expanded="true" aria-controls="collapse<?php echo $doctrine['doctrineid']; ?>">
+												<h2 class="eve-text" style="margin-top: 0px; text-align: center; font-size: 200%; font-weight: 700"><?php echo $doctrine['doctrine_name']; ?> Doctrine</h2>
+											</a>
+										</div>
+										<div id="collapse<?php echo $doctrine['doctrineid']; ?>plan" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="<?php echo $plan['skillplan_id']; ?>planHeading">
+											<?php
+											foreach($fittings as $fitting) {
+												if($i_doctrines % 2 == 1) {
+													?><div class="row"><?php
+												}
+												?>
+										        <div class="col-md-6 col-sm-12" style="background-image: none" id="<?php echo $fitting['fittingid']; ?>" role="tablist" aria-multiselectable="true">
+										          	<div style="vertical-align: middle">
+										            	<div class="row box-title-section" role="tab" id="heading<?php echo $i; ?>" style="text-align: center; background-image: none; background-color: transparent; font-size: 150%; padding-top: 5px; padding-bottom: 5px">
+										              		<a style="text-decoration: none; color: #f5f5f5; font-weight: 700" role="button" data-toggle="collapse" data-parent="<?php echo $fitting['fittingid']; ?>" href="#collapse<?php echo $i; ?>" aria-expanded="true" aria-controls="collapse<?php echo $i; ?>">
+										              			<h2 class="eve-text" style="font-size: 120%"><?php echo $fitting['fitting_name']; ?></h2>
+										              		</a>
+										            	</div>
+										            	<div id="collapse<?php echo $i; ?>" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="heading<?php echo $i; ?>">
+										              		<table class="table table-striped">
+										              			<tr>
+										              				<th>Account</th>
+										              				<th>Can Use</th>
+										              				<th>Missing Some Skills</th>
+										              				<!--<th>Cannot Use</th>-->
+										              			</tr>
+										              			<?php
+										              			foreach($accounts as $account) {
+										              				$stmt_tracking->execute(array($account['uid'], $fitting['fittingid']));
+										              				$tracking = $stmt_tracking->fetchAll(PDO::FETCH_ASSOC);
+
+										              				$tracking_success = 0;
+										              				$tracking_warning = 0;
+
+										              				foreach($tracking as $track) {
+										              					if($track['color_status'] == 'success') {
+										              						$tracking_success = 1;
+										              						break;
+										              					} elseif($track['color_status'] = 'warning') {
+										              						$tracking_warning += 1;
+										              					}
+										              				}
+
+
+										              				if($tracking_success == 1) {
+										              					$tr_class = 'opaque-success';
+										              				} elseif($tracking_warning >= 1) {
+										              					$tr_class = 'opaque-warning';
+										              				} else {
+										              					$tr_class = 'opaque-danger';
+										              				}
+										              				?>
+										              				<tr <?php echo 'class="'.$tr_class.'"'; ?>>
+										              					<td><?php echo $account['username']; ?></td>
+										              					<td><?php foreach($tracking as $track) { if($track['color_status'] == 'success') { echo '<img style="margin-left: 2px; margin-right: 2px" data-toggle="tooltip" data-placement="top" title="'.$track['charactername'].'" src="'.Character::getCharacterImage($track['charid'], 32).'">'; } } ?></td>
+										              					<td><?php foreach($tracking as $track) { if($track['color_status'] == 'warning') { echo '<img style="margin-left: 2px; margin-right: 2px" data-toggle="tooltip" data-placement="top" title="'.$track['charactername'].'" src="'.Character::getCharacterImage($track['charid'], 32).'">'; } } ?></td>
+										              					<!--<td><?php foreach($tracking as $track) { if($track['color_status'] == 'failure') { echo '<img style="margin-left: 2px; margin-right: 2px" data-toggle="tooltip" data-placement="top" title="'.$track['charactername'].'" src="'.Character::getCharacterImage($track['charid'], 32).'">'; } } ?></td>-->
+										              				</tr>
+										              				<?php
+										              			}
+										              			?>
+										              		</table>
+										            	</div>
+										          	</div>
+										        </div>
+												<?php
+												$i++;
+												if($i_doctrines % 2 == 0 OR $i_doctrines == $fittingsCount) {
+													?></div><?php
+												}
+												$i_doctrines++;
+											}
+											?>
+										</div>
+									</div>
+								</div>
+							</div>
+							<?php
 						}
-						?>
-						</div>
-						<?php
+
 					} elseif($compliance_type == 'Skill') {
 						?>
 						 <div class="tab-content col-md-9">
@@ -332,7 +361,6 @@ if($request['action'] == 'api') {
 						  <?php
 					}
 					?>
-				</table>
 			</div>
 		</div>	
     </div>
