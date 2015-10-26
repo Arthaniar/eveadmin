@@ -1,13 +1,12 @@
 <?php
 require_once('includes/header.php');
 
-if(isset($_GET['action'])) {
-  if($_GET['action'] == 'slack') {
+if(isset($_POST['slack_email'])) {
     $sendSlackInvite = sendSlackInvite($_POST['slack_email'], $user->getUsername(), $settings->getSlackAuthToken());
     if($sendSlackInvite) {
       setAlert('success', 'Slack Invitation Sent', 'Check your email for your Slack invite, and remember to register with your Auth username (replacing spaces with underscores).');
     }
-  }
+
 }
 ?>
 <div class="opaque-container">
