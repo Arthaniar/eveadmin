@@ -39,9 +39,9 @@
             <li class="dropdown navbar-member">
               <a href="#" class="dropdown-toggle navbar-member navbar-notifications navbar-portrait" data-toggle="dropdown"><span class="eve-text" style="font-size: 180%; font-weight: 700; padding-right: 5px;">Welcome, <?php if($user->getLoginStatus()) { echo ucfirst($user->getUserName()); ?></span> <img src="https://image.eveonline.com/Character/<?php echo $user->getDefaultID(); ?>_128.jpg" style="height: 75px; width: 75px"> <b class="caret"> <?php } else { echo '<span style="line-height: 70px">Guest! Most functions will not work until you register.</span>'; } ?></b></a>
               <ul class="dropdown-menu">
-                <li><a href="#">Change Character</a></li>
                 <li><a href="/keys/">My API Keys</a></li>
-                <li><a href="#">My Account</a></li>
+                <li><a href="/applications/">My Applications</a></li>
+                <li><a href="/account/">My Account</a></li>
                 <li><a href="/logout/">Logout</a></li>
               </ul>
             </li>
