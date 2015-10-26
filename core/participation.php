@@ -15,7 +15,7 @@ if($request['action'] == 'add' AND $user->getDirectorAccess()) {
 	}
 }
 
-$stmt = $db->prepare('SELECT * FROM user_accounts WHERE gid = ? AND access != "No Access" AND access != "New Applicant" ORDER BY username ASC');
+$stmt = $db->prepare('SELECT uid,username FROM user_accounts WHERE gid = ? AND access != "No Access" AND access != "New Applicant" ORDER BY username ASC');
 $stmt->execute(array($user->getGroup()));
 $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -49,11 +49,11 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				<div class="col-md-3 col-sm-6" style="text-align: center; margin-bottom; 15px">
 					<h3 class="eve-text">Human Participation</h3>
 						<?php
-						$stmt = $db->prepare('SELECT * FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ?');
+						$stmt = $db->prepare('SELECT user_accounts.uid FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ?');
 						$stmt->execute(array($user->getGroup(), $time_period));
 						$participation_humans = $stmt->rowCount();
 
-						$stmt_humans = $db->prepare('SELECT * FROM user_accounts WHERE gid = ?');
+						$stmt_humans = $db->prepare('SELECT uid FROM user_accounts WHERE gid = ?');
 						$stmt_humans->execute(array($user->getGroup()));
 						$total_humans = $stmt_humans->rowCount();
 
@@ -73,7 +73,7 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				<div class="col-md-3 col-sm-6" style="text-align: center; margin-bottom; 15px">
 					<h3 class="eve-text">5 Link Minimum Requirement</h3>
 						<?php
-						$stmt = $db->prepare('SELECT * FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ? AND user_participation.participation_metric >= "5"');
+						$stmt = $db->prepare('SELECT user_accounts.uid FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ? AND user_participation.participation_metric >= "5"');
 						$stmt->execute(array($user->getGroup(), $time_period));
 						$participation_humans = $stmt->rowCount();
 
@@ -128,11 +128,11 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 					</tr>
 					<?php
 					foreach($accounts as $account) {
-						$stmt_participation = $db->prepare('SELECT * FROM user_participation WHERE uid = ? AND time_period = ? LIMIT 1');
+						$stmt_participation = $db->prepare('SELECT participation_metric FROM user_participation WHERE uid = ? AND time_period = ? LIMIT 1');
 						$stmt_participation->execute(array($account['uid'], $time_period));
 						$participation = $stmt_participation->fetch(PDO::FETCH_ASSOC);
 
-						$stmt = $db->prepare('SELECT * FROM characters WHERE uid = ? ORDER BY skillpoints DESC');
+						$stmt = $db->prepare('SELECT charid,charactername,corporation,alliance FROM characters WHERE uid = ? ORDER BY skillpoints DESC');
 						$stmt->execute(array($account['uid']));
 						$characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
