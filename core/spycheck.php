@@ -70,7 +70,8 @@ require_once('includes/header.php');
 			    	<li role="presentation" <?php if($request['action'] == 'doctrines') { echo 'class="active"'; } ?>><a href="/spycheck/doctrines/<?php echo $userAccountID; ?>">Doctrine Compliance</a></li>
 			    	<li role="presentation" <?php if($request['action'] == 'assets') { echo 'class="active"'; } ?>><a href="/spycheck/assets/<?php echo $userAccountID; ?>">Assets</a></li>
 			    	<li role="presentation" <?php if($request['action'] == 'isk') { echo 'class="active"'; } ?>><a href="/spycheck/isk/<?php echo $userAccountID; ?>">ISK and Contracts</a></li>
-			    	<li role="presentation" <?php if($request['action'] == 'killobard') { echo 'class="active"'; } ?>><a href="/spycheck/killboard/<?php echo $userAccountID; ?>">Killboard Activity</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'evemail') { echo 'class="active"'; } ?>><a href="/spycheck/evemail/<?php echo $userAccountID; ?>">Evemails</a></li>
+			    	<li role="presentation" <?php if($request['action'] == 'killboard') { echo 'class="active"'; } ?>><a href="/spycheck/killboard/<?php echo $userAccountID; ?>">Killboard Activity</a></li>
 				</ul>
 
 				<!-- Spychecker Panes -->
@@ -624,6 +625,51 @@ require_once('includes/header.php');
 							</table>
 				        </div>
 				    </div>
+
+				    <?php 
+					} elseif($request['action'] == 'evemail') {
+					?>
+				    <!-- Evemail Pane -->
+				    <div style="margin-top: -25px">
+						<div class="opaque-container" style="width: 100%; margin-top: 20px; margin-bottom: 20px">
+							<div class="row">
+								<div class="col-md-12 opaque-section">
+									<div class="row bog-title-section" style="margin-bottom: 10px">
+										<h2 class="eve-text" style="margin-top: 0px; text-align: center; font-size: 200%; font-weight: 700">Evemails</h2>
+									</div>
+									<div class="row">
+										<table class="table table-striped">
+											<tr>
+												<th>Sender</th>
+												<th>Receiving Character</th>
+												<th>Subject</th>
+												<th>Type</th>
+												<th>Date</th>
+											</tr>
+											<?php
+											$stmt = $db->prepare('SELECT evemail_sender,sent_date,evemail_title,evemail_type,evemail_receiver FROM user_evemail WHERE uid = ? ORDER BY sent_date DESC');
+											$stmt->execute(array($userAccountID));
+											$evemails = $stmt->fetchAll(PDO::FETCH_ASSOC);
+														
+											foreach($evemails as $evemail) {
+												?>
+												<tr>
+													<td><?php echo $evemail['evemail_sender']; ?></td>
+													<td><?php echo $evemail['evemail_receiver']; ?></td>
+													<td><?php echo $evemail['evemail_title']; ?></td>
+													<td><?php echo $evemail['evemail_type']; ?></td>
+													<td><?php echo $evemail['sent_date']; ?></td>
+												</tr>
+												<?php
+											}
+											?>
+										</table>
+									</div>
+								</div>
+							</div>
+						</div>
+				    </div>
+
 
 				    <?php
 				    } elseif($request['action'] == 'killboard') {
