@@ -160,7 +160,7 @@ require_once('includes/header.php');
 											}
 											?>
 										</select>
-										<input class="btn btn-primary eve-text pull-right" style="margin-top: 5px; margin-bottom: 10px; font-size: 125%" type="submit" value="Rename Skill Plan">
+										<input class="btn btn-danger eve-text pull-right" style="margin-top: 5px; margin-bottom: 10px; font-size: 125%" type="submit" value="Delete Skill Plan">
 									</form>
 								</div>
 								<div class="row">
@@ -179,7 +179,7 @@ require_once('includes/header.php');
 										</select>
 										<label>New Skill Plan Name: </label>
 										<input class="form-control" type="text" name="new_skill_plan_name" placeholder="New Skill Plan Name">
-										<input class="btn btn-danger eve-text pull-right" style="margin-top: 5px; margin-bottom: 10px; font-size: 125%" type="submit" value="Delete Skill Plan">
+										<input class="btn btn-primary eve-text pull-right" style="margin-top: 5px; margin-bottom: 10px; font-size: 125%" type="submit" value="Rename Skill Plan">
 									</form>
 								</div>
 							</div>
