@@ -5,7 +5,9 @@ if($request['action'] != NULL) {
 		$keyID = $request['value'];
 		$vCode = $request['value_2'];
 		$key = new ApiKey($keyID, $vCode, $user, $db);
-		if($key->getKeyStatus() == 1 AND $key->getAccessMask() & MINIMUM_API) {
+		if($key->getKeyStatus() == 1 AND $key->getAccessMask() == MINIMUM_API) {
+			var_dump($key);
+			die;
 			$update = $key->updateApiKey();
 			if($update) {
 				$stmt = $db->prepare('SELECT * FROM characters WHERE uid = ? AND userid = ?');
@@ -34,7 +36,7 @@ if($request['action'] != NULL) {
 				setAlert('success', 'API Key Refreshed', 'The API key has been successfully refreshed.');
 								
 			}
-		} elseif(!($key->getAccessMask() & MINIMUM_API) AND $key->getKeyStatus() == 1) {
+		} elseif(!($key->getAccessMask() == MINIMUM_API) AND $key->getKeyStatus() == 1) {
 			setAlert('danger', 'The API Key Does Not Meet Minimum Requirements', 'The required minimum Access Mask for API keys is '.MINIMUM_API.'. Please create a new key using the Create Key link.');
 		}
 	} elseif ($request['action'] == 'delete') {
@@ -43,10 +45,11 @@ if($request['action'] != NULL) {
 		$keyID = $_POST['keyID'];
 		$vCode = $_POST['vCode'];
 		$key = new ApiKey($keyID, $vCode, $user, $db);
-		if($key->getKeyStatus() == 1 AND $key->getAccessMask() & MINIMUM_API) {
+		if($key->getKeyStatus() == 1 AND $key->getAccessMask() == MINIMUM_API) {
+			var_dump($key);
 			$update = $key->updateApiKey();
 			if($update) {
-			    if($settings->getSlack()) {
+			    if($settings->getSlackIntegration()) {
   					sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', 'uncle_toucheys', 'New API Key submitted by '.$user->getUserName().' with Access Mask of '.$key->getAccessMask().'.', 'aura', 'chat.postMessage');
 				}
 				foreach($key->getCharacters() as $character) {
@@ -57,7 +60,7 @@ if($request['action'] != NULL) {
 				}
 				setAlert('success', 'API Key Added', 'The API key has been added. Character skills and other information will populate over the next 10-15 minutes.');			
 			}
-		} elseif(!($key->getAccessMask() & MINIMUM_API) AND $key->getKeyStatus() == 1) {
+		} elseif(!($key->getAccessMask() == MINIMUM_API) AND $key->getKeyStatus() == 1) {
 			setAlert('danger', 'The API Key Does Not Meet Minimum Requirements', 'The required minimum Access Mask for API keys is '.MINIMUM_API.'. Please create a new key using the Create Key link.');
 		}
 	}
@@ -78,6 +81,7 @@ require_once('includes/header.php');
 					<h1 class="eve-text" style="margin-top: 10px; text-align: center; font-size: 200%; font-weight: 700">API Key Management</h1>
 				</a>
 			</div>
+			<?php showAlerts(); ?>
 			<div>
 				<div class="col-md-12">
 					<div class="row" style="padding-top: 20px;">
