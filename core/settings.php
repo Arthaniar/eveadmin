@@ -189,6 +189,7 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 											<input type="hidden" name="disable" value="voice">
 											<input class="btn btn-danger" type="submit" value="Disable Voice Integration">
 										</form>
+										<p>Please note that Notification channel names must be in the form of the unique hex identifier for the channel. Please see <a href="https://api.slack.com/methods/channels.list" target="blank">this API documentation</a> for how to find the correct channel ID.</p>
 										<?php
 									} else {
 										?>
