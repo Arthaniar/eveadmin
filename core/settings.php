@@ -138,7 +138,8 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 												<input style="width: 80%; margin-left: auto; margin-right: auto" type="text" class="form-control" name="slack_auth_token" value="<?php echo $settings->getSlackAuthToken();?>">
 											</formfield>
 											<formfield>
-												<select name="slack_api_notifications" class="form-control">
+												<label>Slack API Notifications</label>
+												<select name="slack_api_notifications" class="form-control" style="width: 80%; margin-right: auto; margin-left: auto">
 												<?php
 													if($settings->getSlackAPINotifications()) {
 														?>
@@ -155,10 +156,28 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 												</select>
 											</formfield>
 											<formfield>
-												
+												<label>Slack API Notification Channel</label>
 											</formfield>
 											<formfield>
-												
+												<label>Slack Ops Notifications</label>
+												<select name="slack_ops_notifications" class="form-control" style="width: 80%; margin-right: auto; margin-left: auto">
+												<?php
+													if($settings->getSlackOpsNotifications()) {
+														?>
+														<option style="background-color: rgb(23,23,23)" value="1" selected>Enabled</option>
+														<option style="background-color: rgb(23,23,23)" value="0">Disabled</option>
+														<?php
+													} else {
+														?>
+														<option style="background-color: rgb(23,23,23)" value="1">Enabled</option>
+														<option style="background-color: rgb(23,23,23)" value="0" selected>Disabled</option>
+														<?php
+													}
+												?>
+												</select>
+											</formfield>
+											<formfield>
+												<label>Slack Ops Notification Channel</label>
 											</formfield>
 											<formfield>
 												<input style="margin-top: 10px; margin-bottom: 10px" class="btn btn-primary" type="submit" value="Update Slack Settings">
