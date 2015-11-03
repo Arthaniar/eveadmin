@@ -6,8 +6,6 @@ if($request['action'] != NULL) {
 		$vCode = $request['value_2'];
 		$key = new ApiKey($keyID, $vCode, $user, $db);
 		if($key->getKeyStatus() == 1 AND $key->getAccessMask() == MINIMUM_API) {
-			var_dump($key);
-			die;
 			$update = $key->updateApiKey();
 			if($update) {
 				$stmt = $db->prepare('SELECT * FROM characters WHERE uid = ? AND userid = ?');
@@ -22,6 +20,7 @@ if($request['action'] != NULL) {
 					$char = new Character($character['characterID'], $key->getKeyID(), $key->getVCode(), $key->getAccessMask(), $db, $user);
 					if($char->getExistance() OR $char->getExistance() == FALSE) {
 						$char->updateCharacterInfo();
+						$char->updateCharacterSkills();
 					}
 
 					unset($character_array[$char->getCharacterID()]);
@@ -46,7 +45,6 @@ if($request['action'] != NULL) {
 		$vCode = $_POST['vCode'];
 		$key = new ApiKey($keyID, $vCode, $user, $db);
 		if($key->getKeyStatus() == 1 AND $key->getAccessMask() == MINIMUM_API) {
-			var_dump($key);
 			$update = $key->updateApiKey();
 			if($update) {
 			    if($settings->getSlackIntegration()) {
@@ -56,6 +54,7 @@ if($request['action'] != NULL) {
 					$char = new Character($character['characterID'], $key->getKeyID(), $key->getVCode(), $key->getAccessMask(), $db, $user);
 					if($char->getExistance() OR $char->getExistance() == FALSE) {
 						$char->updateCharacterInfo();
+						$char->updateCharacterSkills();
 					}
 				}
 				setAlert('success', 'API Key Added', 'The API key has been added. Character skills and other information will populate over the next 10-15 minutes.');			
