@@ -15,6 +15,18 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 			$stmt = $db->prepare('UPDATE group_settings SET group_slack_integration = 1 WHERE gid = ?');
 			$stmt->execute(array($user->getGroup()));
 		}
+	} elseif(isset($_POST['update'])) {
+		if($_POST['update'] == 'slack') {
+			$stmt = $db->prepare('UPDATE group_settings SET group_slack_address = ?, group_slack_auth_token = ?, group_slack_ops_notifications = ?, '.
+					'group_slack_api_notifications = ?, group_slack_main_channel = ?, group_slack_api_channel = ?, group_slack_ops_channel = ? WHERE gid = ?');
+			$stmt->execute(array($_POST['slack_address'], 
+								 $_POST['slack_auth_token'], 
+								 $_POST['slack_ops_notifications'],
+								 $_POST['slack_api_notifications'],
+								 $_POST['slack_main_channel'],
+								 $_POST['slack_api_channel'],
+								 $_POST['slack_ops_channel']));
+		}
 	}
 } elseif($request['action'] == 'account' OR ($request['action'] == 'group' AND !$user->getCEOAccess())) {
 	$settings_type = 'Account';
@@ -129,6 +141,7 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 										?>
 										<h4 style="text-align: center">Status: <span style="color: #01b43a">Enabled</span></h4>
 										<form method="post" action="/settings/group/" style="text-align: center">
+											<input type="hidden" name="update" value="slack">
 											<formfield>
 												<label>Slack Address</label>
 												<input style="width: 80%; margin-left: auto; margin-right: auto" type="text" class="form-control" name="slack_address" value="<?php echo $settings->getSlackAddress();?>">
@@ -136,6 +149,10 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 											<formfield>
 												<label>Slack Auth Token</label>
 												<input style="width: 80%; margin-left: auto; margin-right: auto" type="text" class="form-control" name="slack_auth_token" value="<?php echo $settings->getSlackAuthToken();?>">
+											</formfield>
+											<formfield>
+												<label>Slack Primary Channel</label>
+												<input style="width: 80%; margin-left: auto; margin-right: auto;" type="text" class="form-control" name="slack_main_channel" value="<?php echo $settings->getSlackMainChannel(); ?>">
 											</formfield>
 											<formfield>
 												<label>Slack API Notifications</label>
