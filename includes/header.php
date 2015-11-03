@@ -100,27 +100,24 @@
                     <li><a href="/services/">Services Registration</a></li>
                     <li class="divider"></li>
                     <li class="dropdown-header">External Links</li>
-                    <?php if($settings->getSlack()) {
+                    <?php if($settings->getSlackIntegration()) {
                       ?>
-
+                      <li><a href="<?php echo $settings->getSlackAddress(); ?>">Slack Messaging Service</a></li>
                       <?php
                     }
                     ?>
-                    <?php if($settings->getForums()) {
+                    <?php if($settings->getForumIntegration()) {
                       ?>
-
+                      <li><a href="<?php echo $settings->getForumAddress(); ?>">Group Forums</a></li>
                       <?php
                     }
                     ?>
-                    <?php if($settings->getVoiceCommunications()) {
+                    <?php if($settings->getVoiceIntegration()) {
                       ?>
-
+                      <li><a href="<?php echo $settings->getVoiceConnectionAddress($user->getUsername()); ?>">Voice Chat</a></li>
                       <?php
                     }
                     ?>
-                    <li><a href="/slack/">Corp Slack Chat</a></li>
-                    <li><a href="https://forum.dogft.com">Corp Forum</a></li>
-                    <li><a href="#">Teamspeak</a></li>
                   </ul>
                 </li>
                 <?php
@@ -146,8 +143,8 @@
                       ?>
                     <li class="divider"></li>
                     <li class="dropdown-header">CEO Tools</li>
-                    <li><a href="/groupoverview/">Group Overview</a></li>
-                    <li><a href="/groupsettings/">Group Settings</a></li>
+                    <li><a href="/overview/group/">Group Overview</a></li>
+                    <li><a href="/settings/group/">Group Settings</a></li>
                       <?php
                     }
 
@@ -155,7 +152,7 @@
                       ?>
                       <li class="divider"></li>
                       <li class="dropdown-header">Admin Tools</li>
-                      <li><a href="/adminoverview/">Admin Overview</a></li>
+                      <li><a href="/overview/admin/">Admin Overview</a></li>
                       <li><a href="/security/">Site Security</a></li>
                       <li><a href="/update/">Site Updates</a></li>
                       <?php

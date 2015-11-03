@@ -170,7 +170,7 @@ class ApiKey {
 		$stmt->execute(array($this->uid));
 		$accountInfo = $stmt->fetch();
 
-		if($slackDirectorNotification AND $settings->getSlack()) {
+		if($slackDirectorNotification AND $settings->getSlackIntegration()) {
 			sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), "API Key Error for ".$accountInfo['username'].": ".$keyErrorMessage." Affected API keyID: ".$this->keyID, 'aura', 'chat.postMessage');
 		}
 
@@ -262,7 +262,7 @@ class ApiKey {
 		if($this->accessMask & 8 AND $this->accessMask & 16777216 AND $this->accessMask & 262144 AND $this->accessMask & 131072 AND $this->accessMask & 33554432) {
 			return TRUE;
 		} else {
-			if($settings->getSlack()) {
+			if($settings->getSlackIntegration()) {
 				$stmt = $this->db->prepare('SELECT * FROM user_accounts WHERE uid = ? LIMIT 1');
 				$stmt->execute(array($this->uid));
 				$accountInfo = $stmt->fetch();

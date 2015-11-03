@@ -25,7 +25,7 @@ if(isset($_POST['operation_name'])) {
                        $operationTimestamp,
                        $fittingsList,
                        $_POST['operation_details']));
-  if($settings->getSlack()) {
+  if($settings->getSlackIntegration()) {
     sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Operations Calendar', $settings->getSlackOpsChannel(), 'New Fleet Op Posted: '.$_POST['operation_name'].' - '.$_POST['operation_date'].' @ '.$_POST['operation_time'].' FCed by '.$_POST['operation_fc'].'. Form up in '.$_POST['operation_rally'].' on '.$_POST['operation_comms'], 'squirrel', 'chat.postMessage');
     setAlert('success', 'New Operation Created and Posted To Slack', '');
   } else {

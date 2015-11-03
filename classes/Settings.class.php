@@ -8,6 +8,7 @@ class Settings {
 	private $corpUserID;
 	private $corpVCode;
 
+	private $voiceIntegration;
 	private $voiceCommunications;
 	private $voiceAddress;
 	private $voicePort;
@@ -17,10 +18,10 @@ class Settings {
 	private $groupOwner;
 	private $groupJoinToken;
 
-	private $forums;
+	private $forumIntegration;
 	private $forumsAddress;
 
-	private $slack;
+	private $slackIntegration;
 	private $slackAddress;
 	private $slackWebhook;
 	private $slackAuthToken;
@@ -44,9 +45,14 @@ class Settings {
 		$this->corpVCode = $settings['corp_vCode'];
 
 		// Setting the Voice Communications information
-		$this->voiceCommunications = $settings['group_voicecomms'];
-		$this->voiceAddress = $settings['group_vcaddress'];
-		$this->voicePort = $settings['group_vcport'];
+		if($settings['group_voice_integration'] == 1) {
+			$this->voiceIntegration = TRUE;
+			$this->voiceCommunications = $settings['group_voice_application'];
+			$this->voiceAddress = $settings['group_voice_address'];
+			$this->voicePort = $settings['group_voice_port'];
+		} else {
+			$this->voiceIntegration = FALSE;
+		}
 
 		// Fetching the Group information
 		$stmt = $db->prepare('SELECT * FROM group_groups WHERE gid = ?');
@@ -59,22 +65,23 @@ class Settings {
 		$this->groupOwner = $groupInfo['owner'];
 		$this->groupJoinToken = $groupInfo['jointoken'];
 
-		if($settings['group_forums'] == '' OR $settings['group_forums'] === NULL) {
+		if($settings['group_forum_integration'] == 0) {
 			$this->forums = NULL;
 			$this->forumsAddress = NULL;
 		} else {
-			$this->forums = TRUE;
-			$this->forumsAddress = $settings['group_forums_address'];
+			$this->forumIntegration = TRUE;
+			$this->forumApplication = $settings['group_forum_application'];
+			$this->forumsAddress = $settings['group_forum_address'];
 		}
 
-		if($settings['group_slack_integration'] === FALSE) {
-			$this->slack = FALSE;
+		if($settings['group_slack_integration'] == 0) {
+			$this->slackIntegration = FALSE;
 			$this->slackWebhook = FALSE;
 			$this->slackAuthToken = FALSE;
 			$this->slackOperationsNotifications = FALSE;
 			$this->slackAPINotifications = FALSE;
 		} else {
-			$this->slack = TRUE;
+			$this->slackIntegration = TRUE;
 			$this->slackAddress = $settings['group_slack_address'];
 			$this->slackWebhook = $settings['group_slack_webhook'];
 			$this->slackAuthToken = $settings['group_slack_auth_token'];
@@ -85,6 +92,17 @@ class Settings {
 			$this->slackOpsChannel = $settings['group_slack_ops_channel'];
 		}
 
+	}
+
+	// Setting up the correct Voice link address
+	public function getVoiceConnectionAddress($username) {
+		if($this->voiceCommunications = "TS3") {
+			$connection = 'ts3server://'.$this->voiceAddress.'?port='.$this->voicePort.'&nickname='.$username;
+		} elseif($this->voiceCommunications = 'Mumble') {
+			$connection = 'mumble://'.$username.'@'.$this->voiceAddress.':'.$this->voicePort;
+		}
+
+		return $connection;
 	}
 
 	// Publically accessible endpoints for the different class variables
@@ -99,6 +117,10 @@ class Settings {
 
 	public function getGroupID() {
 		return $this->groupID;
+	}
+
+	public function getVoiceIntegration() {
+		return $this->voiceIntegration;
 	}
 
 	public function getVoiceCommunications() {
@@ -129,16 +151,20 @@ class Settings {
 		return $this->groupJoinToken;
 	}
 
-	public function getForums() {
-		return $this->forums;
+	public function getForumIntegration() {
+		return $this->forumIntegration;
 	}
 
-	public function getForumsAddress() {
+	public function getForumApplication() {
+		return $this->forumApplication;
+	}
+
+	public function getForumAddress() {
 		return $this->forumsAddress;
 	}
 
-	public function getSlack() {
-		return $this->slack;
+	public function getSlackIntegration() {
+		return $this->slackIntegration;
 	}
 
 	public function getSlackWebhook() {
@@ -170,6 +196,4 @@ class Settings {
 	public function getSlackOpsChannel() {
 		return $this->slackOpsChannel;
 	}
-
-
 }
