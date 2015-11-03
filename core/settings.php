@@ -162,7 +162,7 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 												<label>Slack Ops Notifications</label>
 												<select name="slack_ops_notifications" class="form-control" style="width: 80%; margin-right: auto; margin-left: auto">
 												<?php
-													if($settings->getSlackOpsNotifications()) {
+													if($settings->getSlackOperationsNotifications()) {
 														?>
 														<option style="background-color: rgb(23,23,23)" value="1" selected>Enabled</option>
 														<option style="background-color: rgb(23,23,23)" value="0">Disabled</option>
