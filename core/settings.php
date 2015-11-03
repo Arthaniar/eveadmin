@@ -157,6 +157,7 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 											</formfield>
 											<formfield>
 												<label>Slack API Notification Channel</label>
+												<input style="width: 80%; margin-left: auto; margin-right: auto;" type="text" class="form-control" name="slack_api_channel" value="<?php echo $settings->getSlackAPIChannel(); ?>">
 											</formfield>
 											<formfield>
 												<label>Slack Ops Notifications</label>
@@ -178,6 +179,7 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 											</formfield>
 											<formfield>
 												<label>Slack Ops Notification Channel</label>
+												<input style="width: 80%; margin-left: auto; margin-right: auto;" type="text" class="form-control" name="slack_ops_channel" value="<?php echo $settings->getSlackOpsChannel(); ?>">
 											</formfield>
 											<formfield>
 												<input style="margin-top: 10px; margin-bottom: 10px" class="btn btn-primary" type="submit" value="Update Slack Settings">
