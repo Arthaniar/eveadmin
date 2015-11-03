@@ -1,4 +1,4 @@
 vendor
 eveadmin.sublime*
 sftp-config.json
-settings.php
+includes/settings.php
