@@ -116,11 +116,11 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 						<form method="post" action="/participation/">
 							<td>Select Participation Timeframe:</td>
 							<td>
-								<select class="form-control">
+								<select class="form-control" name="time_period">
 									<option style="background-color: rgb(24,24,24)" value="August 2015">Aug 2015</option>
 									<option style="background-color: rgb(24,24,24)" value="September 2015">Sept 2015</option>
-									<option style="background-color: rgb(24,24,24)" value="October 2015" selected>Oct 2015</option>
-									<option style="background-color: rgb(24,24,24)" value="November 2015">Nov 2015</option>
+									<option style="background-color: rgb(24,24,24)" value="October 2015" >Oct 2015</option>
+									<option style="background-color: rgb(24,24,24)" value="November 2015" selected>Nov 2015</option>
 								</select>
 							</td>
 							<td><input type="submit" class="btn btn-success" value="Look Up Paps"></td>
