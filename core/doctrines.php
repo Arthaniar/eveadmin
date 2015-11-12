@@ -187,6 +187,9 @@ if($request['action'] != 'view') {
 													<th></th>
 												</tr>
 												<?php
+													// Creating the IGB Fitting Array
+													$igb_fitting_array = array();
+
 													$preRequisites = Fitting::checkItemPrerequisites($fitting['fitting_ship'], $user->getDefaultID());
 
 													if($preRequisites) {
@@ -198,6 +201,9 @@ if($request['action'] != 'view') {
 														$prereq_color = 'class="opaque-danger"';
 														$fitting_prerequsites[$fitting['fittingid']]['danger']++;
 													}
+
+													// Adding the SHIP Hull ID to the IGB Fitting Array
+													$igb_fitting_array[] = $fitting['fitting_ship'];
 												?>
 												<tr <?php echo $prereq_color; ?>>
 													<td style="text-align: left; width; 32px"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"></td>
@@ -213,6 +219,48 @@ if($request['action'] != 'view') {
 												<?php
 												$stmt = $db->prepare('SELECT * FROM doctrines_fittingmods WHERE fittingid = ? AND module_slot = ?');
 
+												// Getting our Subsystems items first
+												$stmt->execute(array($fitting['fittingid'], 'Subsystem'));
+												$subsys_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+												if($stmt->rowCount() >= 1) {
+													?>
+													<tr>
+														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
+														<td></td>
+														<td>Subsystems Modules</td>
+														<td></td>
+													</tr>
+													<?php
+													foreach($subsys_slots as $subsys) {
+														// Adding subsystems to the IGB Fitting Array
+														$igb_fitting_array[] = $subsys['type_id'].';'.$subsys['module_quantity'];
+
+														$preRequisites = Fitting::checkItemPrerequisites($subsys['type_id'], $user->getDefaultID());
+
+														if($preRequisites) {
+															$prereq_color = 'class="opaque-success"';
+														} elseif($preRequisites == 'WARNING') {
+															$prereq_color = 'class="opaque-warning"';
+														} else {
+															$prereq_color = 'class="opaque-danger"';
+														}
+														?>
+														<tr <?php echo $prereq_color; ?>>
+															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $subsys['type_id']; ?>_32.png"></td>
+															<td style="text-align: left; width: 50px"><?php echo $subsys['module_quantity']; ?>x</td>
+															<td style="text-align: left; width: auto"><?php echo $eve->getTypeName($subsys['type_id']); ?></td>
+															<td style="width: 100px">
+																<a href="#"><span data-toggle="tooltip" data-placement="top" title="View On Market" class="glyphicon glyphicon-euro"></span></a>
+																<a href="#"><span data-toggle="tooltip" data-placement="top" title="Add To Purchase Cart" class="glyphicon glyphicon-shopping-cart"></span></a>
+																<a href="#"><span data-toggle="tooltip" data-placement="top" title="View on Evelopedia" class="glyphicon glyphicon-file"></span></a>
+																<a href="#"><span data-toggle="tooltip" data-placement="top" title="Show Info" class="glyphicon glyphicon-info-sign"></span></a>
+															</td>
+														</tr>
+														<?php
+													}
+												}
+
 												// Getting our High Slot items first
 												$stmt->execute(array($fitting['fittingid'], 'High'));
 												$high_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -227,6 +275,9 @@ if($request['action'] != 'view') {
 													</tr>
 													<?php
 													foreach($high_slots as $high) {
+														// Adding high slot items to the IGB Fitting Array
+														$igb_fitting_array[] = $high['type_id'].';'.$high['module_quantity'];
+
 														$preRequisites = Fitting::checkItemPrerequisites($high['type_id'], $user->getDefaultID());
 
 														if($preRequisites) {
@@ -267,48 +318,10 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($mid_slots as $high) {
-														$preRequisites = Fitting::checkItemPrerequisites($high['type_id'], $user->getDefaultID());
+													foreach($mid_slots as $mid) {
+														// Adding mid slots to IGB Fitting Array
+														$igb_fitting_array[] = $mid['type_id'].';'.$mid['module_quantity'];
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-															$fitting_prerequsites[$fitting['fittingid']]['warning']++;
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-															$fitting_prerequsites[$fitting['fittingid']]['danger']++;
-														}
-														?>
-														<tr <?php echo $prereq_color; ?>>
-															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $high['type_id']; ?>_32.png"></td>
-															<td style="text-align: left; width: 50px"><?php echo $high['module_quantity']; ?>x</td>
-															<td style="text-align: left; width: auto"><?php echo $eve->getTypeName($high['type_id']); ?></td>
-															<td style="width: 100px">
-																<a href="#"><span data-toggle="tooltip" data-placement="top" title="View On Market" class="glyphicon glyphicon-euro"></span></a>
-																<a href="#"><span data-toggle="tooltip" data-placement="top" title="Add To Purchase Cart" class="glyphicon glyphicon-shopping-cart"></span></a>
-																<a href="#"><span data-toggle="tooltip" data-placement="top" title="View on Evelopedia" class="glyphicon glyphicon-file"></span></a>
-																<a href="#"><span data-toggle="tooltip" data-placement="top" title="Show Info" class="glyphicon glyphicon-info-sign"></span></a>
-															</td>
-														</tr>
-														<?php
-													}
-												}
-
-												// Getting our Low Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Low'));
-												$low_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-												if($stmt->rowCount() >= 1) {
-													?>
-													<tr>
-														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
-														<td></td>
-														<td>Low Slot Modules</td>
-														<td></td>
-													</tr>
-													<?php
-													foreach($low_slots as $mid) {
 														$preRequisites = Fitting::checkItemPrerequisites($mid['type_id'], $user->getDefaultID());
 
 														if($preRequisites) {
@@ -336,28 +349,33 @@ if($request['action'] != 'view') {
 													}
 												}
 
-												// Getting our Rig Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Rig'));
-												$rig_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+												// Getting our Low Slot items first
+												$stmt->execute(array($fitting['fittingid'], 'Low'));
+												$low_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
 														<td></td>
-														<td>Ship Rigs</td>
+														<td>Low Slot Modules</td>
 														<td></td>
 													</tr>
 													<?php
-													foreach($rig_slots as $low) {
+													foreach($low_slots as $low) {
+														// Adding low slots to IGB fitting array
+														$igb_fitting_array[] = $low['type_id'].';'.$low['module_quantity'];
+
 														$preRequisites = Fitting::checkItemPrerequisites($low['type_id'], $user->getDefaultID());
 
 														if($preRequisites) {
 															$prereq_color = 'class="opaque-success"';
 														} elseif($preRequisites == 'WARNING') {
 															$prereq_color = 'class="opaque-warning"';
+															$fitting_prerequsites[$fitting['fittingid']]['warning']++;
 														} else {
 															$prereq_color = 'class="opaque-danger"';
+															$fitting_prerequsites[$fitting['fittingid']]['danger']++;
 														}
 														?>
 														<tr <?php echo $prereq_color; ?>>
@@ -375,21 +393,24 @@ if($request['action'] != 'view') {
 													}
 												}
 
-												// Getting our Drone / Cargo Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Subsystem'));
-												$subsys_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+												// Getting our Rig Slot items first
+												$stmt->execute(array($fitting['fittingid'], 'Rig'));
+												$rig_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
 														<td></td>
-														<td>Subsystems Modules</td>
+														<td>Ship Rigs</td>
 														<td></td>
 													</tr>
 													<?php
-													foreach($subsys_slots as $subsys) {
-														$preRequisites = Fitting::checkItemPrerequisites($subsys['type_id'], $user->getDefaultID());
+													foreach($rig_slots as $rig) {
+														// Adding rigs to IGB fitting array
+														$igb_fitting_array[] = $rig['type_id'].';'.$rig['module_quantity'];
+
+														$preRequisites = Fitting::checkItemPrerequisites($low['type_id'], $user->getDefaultID());
 
 														if($preRequisites) {
 															$prereq_color = 'class="opaque-success"';
@@ -400,9 +421,9 @@ if($request['action'] != 'view') {
 														}
 														?>
 														<tr <?php echo $prereq_color; ?>>
-															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $subsys['type_id']; ?>_32.png"></td>
-															<td style="text-align: left; width: 50px"><?php echo $subsys['module_quantity']; ?>x</td>
-															<td style="text-align: left; width: auto"><?php echo $eve->getTypeName($subsys['type_id']); ?></td>
+															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $rig['type_id']; ?>_32.png"></td>
+															<td style="text-align: left; width: 50px"><?php echo $rig['module_quantity']; ?>x</td>
+															<td style="text-align: left; width: auto"><?php echo $eve->getTypeName($rig['type_id']); ?></td>
 															<td style="width: 100px">
 																<a href="#"><span data-toggle="tooltip" data-placement="top" title="View On Market" class="glyphicon glyphicon-euro"></span></a>
 																<a href="#"><span data-toggle="tooltip" data-placement="top" title="Add To Purchase Cart" class="glyphicon glyphicon-shopping-cart"></span></a>
@@ -428,6 +449,9 @@ if($request['action'] != 'view') {
 													</tr>
 													<?php
 													foreach($drone_slots as $drone) {
+														// Adding drones and cargo to IGB Fitting Array
+														$igb_fitting_array[] = $drone['type_id'].';'.$drone['module_quantity'];
+
 														$preRequisites = Fitting::checkItemPrerequisites($drone['type_id'], $user->getDefaultID());
 
 														if($preRequisites) {
@@ -541,6 +565,10 @@ if($request['action'] != 'view') {
 	                        </div>
 	                        <!-- Modal Footer -->
 	                		<div class="modal-footer">
+	                			<?php
+	                			$igb_fitting_string = implode(":", $igb_fitting_array).'::';
+	                			?>
+	                			<button class="btn btn-primary" onclick="CCPEVE.showFitting('<?php echo $igb_fitting_string; ?>')">Open Fitting In EVE</button>
 	                  			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 	                		</div>
 	              		</div>
