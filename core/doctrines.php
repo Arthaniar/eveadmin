@@ -226,7 +226,7 @@ if($request['action'] != 'view') {
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
-														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
+														<td><img style="width: 24px; height: 24px;" src="/img/slot_subsys.jpg"></td>
 														<td></td>
 														<td>Subsystems Modules</td>
 														<td></td>
@@ -312,7 +312,7 @@ if($request['action'] != 'view') {
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
-														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
+														<td><img style="width: 24px; height: 24px;" src="/img/slot_mid.png"></td>
 														<td></td>
 														<td>Mid Slot Modules</td>
 														<td></td>
@@ -356,7 +356,7 @@ if($request['action'] != 'view') {
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
-														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
+														<td><img style="width: 24px; height: 24px;" src="/img/slot_low.png"></td>
 														<td></td>
 														<td>Low Slot Modules</td>
 														<td></td>
@@ -400,7 +400,7 @@ if($request['action'] != 'view') {
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
-														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
+														<td><img style="width: 24px; height: 24px;" src="/img/slot_rig.png"></td>
 														<td></td>
 														<td>Ship Rigs</td>
 														<td></td>
@@ -442,7 +442,7 @@ if($request['action'] != 'view') {
 												if($stmt->rowCount() >= 1) {
 													?>
 													<tr>
-														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
+														<td><img style="width: 24px; height: 24px;" src="/img/slot_cargo.jpg"></td>
 														<td></td>
 														<td>Drone Bay and Cargo Hold</td>
 														<td></td>
