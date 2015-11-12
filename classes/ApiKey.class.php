@@ -178,10 +178,72 @@ class ApiKey {
 	}
 
 	public function refreshAPIKey() {
-		global $db;
-		$stmt = $this->db->prepare('UPDATE core_cron SET cron_updated = 1 WHERE api_keyID = ?');
-		$stmt->execute(array($this->keyID));
-		return TRUE;
+		global $settings;
+		if($this->keyStatus == 1 AND $this->accessMask == MINIMUM_API AND $this->expires == 'No Expiration' AND $this->keyType == 'Account') {
+
+			$update = $this->updateAPIKey();
+
+			if($update) {
+				if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
+					sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'New API Key submitted by '.User::fetchUserName($this->uid).'.', 'aura', 'chat.postMessage');
+				}
+
+				$character_array = array();
+
+				foreach($this->getCharacters() as $character) {
+					$character_array[$character['characterID']] = $character['characterID'];
+
+					$char = new Character($character['characterID'], $this->keyID, $this->vcode, $this->accessMask, $this->db, $this->uid);
+					if($char->getExistance() OR $char->getExistance() == FALSE) {
+						$char->updateCharacterInfo();
+						$char->updateCharacterSkills();
+					}
+				}
+
+				$stmt = $this->db->prepare('UPDATE core_cron SET cron_updated = 1 WHERE api_keyID = ?');
+				$stmt->execute(array($this->keyID));
+
+				$this->removeOrphanedCharacter($this->keyID, $this->uid, $character_array);
+				return TRUE;
+
+			}
+		} elseif($this->keyStatus != 1) {
+			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
+				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected as it is invalid.', 'aura', 'chat.postMessage');
+			}
+			setAlert('danger', 'The API Key Is Invalid', 'The API Key provided is invalid and cannot be used. Please create a new API key, and ensure you have copied the keyID and verification code correctly.');
+		} elseif(!($this->accessMask == MINIMUM_API) AND $this->getKeyStatus() == 1) {
+			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
+				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected due to an incorrect access mask.', 'aura', 'chat.postMessage');
+			}
+			setAlert('danger', 'The API Key Does Not Meet Minimum Requirements', 'The required minimum Access Mask for API keys is '.MINIMUM_API.'. Please create a new key using the Create Key link.');
+		} elseif($this->expires != 'No Expiration') {
+			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
+				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected because it has an expiration.', 'aura', 'chat.postMessage');
+			}
+			setAlert('danger', 'The API Key Expires', 'The provided API Key has an expiration set. Please create a new key using the Create Key link and ensure you select the No Expiration checkbox.');
+		} elseif($this->keyType != 'Account') {
+			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
+				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected because it is a single character key.', 'aura', 'chat.postMessage');
+			}
+			setAlert('danger', 'The API Key Provided is Single-Character', 'All API Keys must be account-wide. Please create a new key using the Create Key link, and do not change the key from an Account Key to a Single Character key.');
+		}
+	}
+
+	private function removeOrphanedCharacter($keyID, $uid, $character_array) {
+		$stmt = $this->db->prepare('SELECT charid FROM characters WHERE uid = ? and userid = ?');
+		$stmt->execute(array($uid, $keyID));
+		$characters = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+		foreach($characters as $character) {
+			unset($character_array[$character['charid']]);
+		}
+
+		if(!empty($character_array)) {
+			foreach($character_array as $delete_character) {
+				Character::deleteCharacter($delete_character, $uid);
+			}
+		}
 	}
 
 	public function disableAPIKey() {
