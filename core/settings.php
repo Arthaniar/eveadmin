@@ -25,7 +25,8 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 								 $_POST['slack_api_notifications'],
 								 $_POST['slack_main_channel'],
 								 $_POST['slack_api_channel'],
-								 $_POST['slack_ops_channel']));
+								 $_POST['slack_ops_channel'],
+								 $user->getGroup()));
 		}
 	}
 } elseif($request['action'] == 'account' OR ($request['action'] == 'group' AND !$user->getCEOAccess())) {

@@ -9,7 +9,6 @@ if(isset($_POST['slack_email'])) {
 }
 ?>
 <div class="opaque-container">
-	<?php var_dump($settings); ?>
 
     <div class="row" style="width: 100%; margin-top: 20px; margin-bottom: 20px">
 		<div class="col-md-12 opaque-section" style="padding: 0px">

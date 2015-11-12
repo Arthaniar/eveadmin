@@ -693,7 +693,7 @@ class Character {
 			$stmt->execute(array($this->keyID));
 
 			// Disabling the key.
-			$stmt = $this->db->prepare('UPDATE core_cron SET keystatus = 0 WHERE api_keyID = ?');
+			$stmt = $this->db->prepare('UPDATE user_apikeys SET keystatus = 0 WHERE userid = ?');
 			$stmt->execute(array($this->keyID));
 
 			// Adding the error output to our error_logging DB table
