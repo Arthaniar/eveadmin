@@ -296,6 +296,15 @@ class User {
 		}
 	}
 
+	public static function fetchUserName($uid) {
+		global $db;
+		$stmt = $db->prepare('SELECT username FROM user_accounts WHERE uid = ?');
+		$stmt->execute(array($uid));
+		$account = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		return $account['username'];
+	}
+
 	// Checking the API Mask to see if we have access to a section
 	public function checkAPIAccess($requiredMask) {
 		$stmt = $this->db->prepare('SELECT userid FROM characters WHERE charid = ?');
