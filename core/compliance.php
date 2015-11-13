@@ -38,7 +38,7 @@ if($request['action'] == 'api') {
       $memberList[$member->name]['name'] = $member->name;
       $memberList[$member->name]['id'] = $member->characterID;
     }
-    sort($memberList);
+    ksort($memberList, SORT_NATURAL | SORT_FLAG_CASE);
 
 	// Working through the member list
 	$stmt = $db->prepare('SELECT * FROM characters WHERE charid = ?');
