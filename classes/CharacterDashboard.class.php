@@ -12,7 +12,7 @@ class CharacterDashboard {
      * @param $mainCharacterID string
      * The $mainCharacterID string can equal 1 if you want the main character included as part of the returned value
 	 */
-	public function __construct($user, $mainCharacterID) {
+	public function __construct($user, $mainCharacterID, $spycheck) {
 		global $db;
 
 		if(is_object($user)) {
@@ -25,7 +25,7 @@ class CharacterDashboard {
 		$stmt->execute(array($uid));
 		$groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-		if($stmt->rowCount() >= 1) {
+		if($stmt->rowCount() >= 1 AND !$spycheck) {
 			foreach($groups as $group) {
 				$stmt = $db->prepare('SELECT character_id FROM user_character_group_assignment WHERE uid = ? AND character_group_id = ? and character_id != ?');
 				$stmt->execute(array($uid, $group['character_group_id'], $mainCharacterID));

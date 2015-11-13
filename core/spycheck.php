@@ -51,7 +51,7 @@ require_once('includes/header.php');
 							<select name="evaluation" onchange="this.form.submit()" style="color: #333; margin-bottom: 4px">
 								<option value="">Select Account</option>
 								<?php 
-								$stmt = $db->prepare('SELECT uid,username FROM user_accounts WHERE gid = ?');
+								$stmt = $db->prepare('SELECT uid,username FROM user_accounts WHERE gid = ? ORDER BY username ASC');
 								$stmt->execute(array($user->getGroup()));
 								$accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 								foreach($accounts as $account) {
@@ -126,8 +126,11 @@ require_once('includes/header.php');
 				        <h3 style="text-align: center">Character Overview</h3>
 				        <div class="row">
 				        	<?php
-				        	$characters = new CharacterDashboard($userAccountID, 1);
-				        	foreach($characters->getCharacters() as $character) {
+				        	$characters = new CharacterDashboard($userAccountID, 1, TRUE);
+				        	$characters_groups =$characters->getCharacters();
+				        	$characters_list = $characters_groups['All Characters'];
+				        	unset($characters_list['name']);
+				        	foreach($characters_list as $character) {
 				        		?>
 				                <div style="width: 50%; float: left; padding-bottom: 10px">
 				                  <div style="float:left"> <!-- Character Portrait -->

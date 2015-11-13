@@ -42,7 +42,7 @@ if(isset($_POST['character_group'])) {
 require_once('includes/header.php');
 
 // Getting all characters except the Main Character for output in the Dashboard
-$characters = new CharacterDashboard($user, $user->getDefaultID());
+$characters = new CharacterDashboard($user, $user->getDefaultID(), FALSE);
 
 // Getting the main character specifically
 $mainCharacter = new Character($user->getDefaultID(), $user->getDefaultKeyID(), $user->getDefaultVCode(), $user->getDefaultAccessMask(), $db, $user);
