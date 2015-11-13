@@ -50,14 +50,11 @@ foreach($contracts->contractList as $contract) {
 							 $doctrine,
 							 $ship,
 							 strtotime($contract['dateExpired'])));
+
+		$contractItems = $pheal->ContractItems(array('contractID' => $contract['contractID'] ));
+
+		foreach($contractItems->itemList as $item) {
+			$stmt_items->execute(array($contract['contractID'], $item['typeID'], $item['quantity'], $item['quantity']));
+		}
 	}
-
-	$contractItems = $pheal->ContractItems(array('contractID' => $contract['contractID'] ));
-
-	foreach($contractItems->itemList as $item) {
-		$stmt_items->execute(array($contract['contractID'], $item['typeID'], $item['quantity'], $item['quantity']));
-	}
-
-
-	setAlert('success', 'Contracts Successfully Updated', 'All contracts have been updated successfully. It may take some time for doctrine information to be populated');
 }

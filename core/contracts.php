@@ -3,6 +3,7 @@ require_once('includes/header.php');
 if($request['action'] == 'alliance') {
 	$doctrine_array = [ "AHAC Fleet" => '#000099',
 						'Ferox Fleet' => '#003399',
+						'Hurricane Fleet' => '#0055bb',
 					    "Caracal Fleet" => '#9900ff', 
 					    "Harpy Fleet" => '#9933ff', 
 					    "Svipul Fleet" => '#6600ff', 
@@ -10,7 +11,8 @@ if($request['action'] == 'alliance') {
 					    "Legion Fleet" => '#006600',
 					    'Dominix Fleet' => '#336600',
 					    'Tengu Fleet' => '#009900',
-					    'Tempest Fleet' => '#006633'];
+					    'Tempest Fleet' => '#006633',
+					    'Special Snowflake' => '#330099'];
 
 	// Getting the contracts from our Database
 	$stmt = $db->prepare('SELECT * FROM alliance_contracts WHERE end_date >= ? ORDER BY doctrine,ship,price,end_date ASC');
@@ -38,6 +40,7 @@ if($request['action'] == 'alliance') {
 							<div class="row box-title-section"><h3>Mid-Level Doctrines</h3></div>
 							AHAC Fleet: <?php $stmt->execute(array('AHAC Fleet')); echo $stmt->rowCount(); ?> total contracts<br />
 							Ferox Fleet: <?php $stmt->execute(array('Ferox Fleet')); echo $stmt->rowCount(); ?> total contracts<br />
+							Hurricane Fleet: <?php $stmt->execute(array('Hurricane Fleet')); echo $stmt->rowCount(); ?> total contracts<br />
 					</div>
 					<div class="col-md-4 col-sm-12">
 						<div class="row box-title-section"><h3>Skirmish Doctrines</h3></div>
@@ -85,7 +88,7 @@ if($request['action'] == 'alliance') {
 											$ship = $stmt->fetch(PDO::FETCH_ASSOC);
 
 											if(isset($ship['fitting_name'])) {
-												$doctrine_name = '<span class="label label-success" style="font-size: 85%; background-color: '.$doctrine_array[$contract['doctrine']].'">'.$contract['doctrine'].'</label>';
+												$doctrine_name = '<span class="label label-success" style="font-size: 85%; background-color: '.$doctrine_array[trim($contract['doctrine'])].'">'.$contract['doctrine'].'</label>';
 
 												switch($ship['fitting_role']):
 													case 'Logistics':
