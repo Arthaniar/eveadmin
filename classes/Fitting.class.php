@@ -183,7 +183,7 @@ Class Fitting {
 						$stmt->execute(array($fittingInfo['fittingid']));
 
 						$stmt = $db->prepare('DELETE FROM doctrines_fits WHERE fittingid = ? AND gid = ?');
-						$stmt->execute(array($fittingInfo['fittingid'], $user->getGroupID()));
+						$stmt->execute(array($fittingInfo['fittingid'], $user->getGroup()));
 						break;
 					} else {
 						$stmt = $db->prepare('INSERT INTO doctrines_fittingmods (fittingid,type_id,module_quantity,module_slot) VALUES (?,?,?,?)'.
