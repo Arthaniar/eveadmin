@@ -44,8 +44,9 @@ require_once('includes/header.php');
 								<th>Actions</th>
 							</tr>
 							<tr>
-								<form action="/keys/add/" method="post">
+								<form action="/keys/" method="post">
 									<formfield>
+										<input type="hidden" name="action" value="add">
 										<td><input class="form-control" name="keyID" type="text"></td>
 									</formfield>
 									<formfield>
