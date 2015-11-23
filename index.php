@@ -20,6 +20,7 @@ if($user->getLoginStatus()) {
 			$request['page'] = 'login';
 			break;
 		case NULL:
+		case 'contracts':
 		case 'dashboard':
 			// Public access
 		case 'register':
@@ -66,7 +67,7 @@ if($user->getLoginStatus()) {
 
 } else {
 	// The user is not logged in, so we will only let them see the login page unless they're trying to reach register or recover password
-	if($request['page'] != 'recover' AND $request['page'] != 'register' AND $request['page'] != 'alliancecontracts' AND $request['action'] != 'courier') {
+	if($request['page'] != 'recover' AND $request['page'] != 'register' AND $request['page'] != 'alliancecontracts' AND $request['page'] != 'courier' AND $request['page'] != 'contracts') {
 		$request['page'] = 'login';
 	}
 }

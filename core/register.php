@@ -38,6 +38,7 @@ if(isset($_POST['username'])) {
 					</div>
 					<div class="row" style="padding-left: 10px; padding-right: 10px">
 						<p class="eve-text" style="font-size: 150%; text-align: center">Registration requires a full, non-expiring, account wide API key. Please create a key using <a href="https://community.eveonline.com/support/api-key/CreatePredefined?accessMask=<?php echo MINIMUM_API; ?>" target="_blank">this link</a>, and submit the keyID and verification code below.</p>
+						<p>Only register once you have been instructed to do so. Accounts must be approved by a Recruiter before any additional functionality is gained. If you are an alliance member or blue you may use the public tools, but you will not gain any additional functionality by registering here.</p>
 						<form method="post" action="/register/2/" name="registerform" id="registerform" style="margin-bottom: 15px; margin-top: 15px">
 							<fieldset>
 								<input class="form-control" type="text" placeholder="API Key ID" name="keyID">

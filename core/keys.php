@@ -5,7 +5,8 @@ if(isset($_POST['action'])) {
 		$keyID = $_POST['keyID'];
 		$vCode = $_POST['vCode'];
 		$key = new ApiKey($keyID, $vCode, $user, $db);
-		$keyUpdate = $key->refreshAPIKey();
+		$update_type = $_POST['action'];
+		$keyUpdate = $key->refreshAPIKey($update_type);
 		if($keyUpdate AND $_POST['action'] == 'refresh') {
 			setAlert('success', 'API Key Updated', 'The selected API Key has been refreshed, and all character information updated.');
 		} elseif($keyUpdate AND $_POST['action'] == 'add') {

@@ -95,11 +95,11 @@ if(isset($_POST['slack_email'])) {
 					<div class="col-md-4 col-sm-12">
 						<div class="row opaque-section" style="background-image: none; background-color: transparent">
 							<div class="row box-title-section">
-								<h3 style="text-align: center"><?php if($settings->getForums()){ echo $settings->getGroupTicker().' Forums'; } else { echo 'Forum Integration Disabled'; }; ?></h3>
+								<h3 style="text-align: center"><?php if($settings->getForumIntegration()){ echo $settings->getGroupTicker().' Forums'; } else { echo 'Forum Integration Disabled'; }; ?></h3>
 								<h4 style="text-align: center; color: #01b43a">Registered and Synced</h4>
 							</div>
 							<div class="row" style="text-align: center; padding-top: 10px">
-								<a href="<?php echo $settings->getForumsAddress(); ?>" target="blank" class="btn btn-primary">Go To Forums</a>
+								<a href="<?php echo $settings->getForumAddress(); ?>" target="blank" class="btn btn-primary">Go To Forums</a>
 								<p style="margin-top: 5px">Username: <?php echo $user->getUsername(); ?><br />
 								Password: Your Auth Password</p>
 							</div>

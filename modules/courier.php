@@ -15,7 +15,7 @@ require_once('includes/header.php');
 					<h3 style="text-align: center">Contract Calculator</h3>
 				</div>
 				<div class="row">
-					<form method="post" action="/modules/courier/">
+					<form method="post" action="/courier/">
 						<formfield>
 							<label for="freighter_route">Jump Freighter Route:</label>
 							<select class="form-control" name="freighter_route" id="freighter_route">
@@ -91,7 +91,7 @@ require_once('includes/header.php');
 									$minimum_rate = 1;
 								} else {
 									$base_rate = 250;
-									$minimum_rate = 5000000;
+									$minimum_rate = 10000000;
 								}
 								break;
 							case '750':
@@ -107,7 +107,7 @@ require_once('includes/header.php');
 								break;
 							default:
 								$base_rate = $_POST['freighter_route'];
-								$minimum_rate = 5000000;
+								$minimum_rate = 10000000;
 								$max_volume = 360000;
 								break;
 						endswitch;
@@ -121,6 +121,7 @@ require_once('includes/header.php');
 						$base_fee_display = $base_rate.'isk/m3';
 					} else {
 						$base_fee = 150000000;
+						$max_volume = 360000;
 						$base_fee_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="If you plan on regularly contracting from the same station, consider contacting Ashkrall to add this system as a permanent route for a reduced rate!">Flat Fee: 150,000,000 ISK</span>';
 					}
 
@@ -137,7 +138,7 @@ require_once('includes/header.php');
 						$volume_display = '<span class="label label-success" data-toggle="tooltip" data-placement="top" title="Alright! You get a 5% discount for packing like a pro!">'.number_format($_POST['total_volume']).'m3</span>';
 						$volume_modifier = 0.95;
 					} else {
-						$volume_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="Consider packing in multiples of 120,000 m3 for a 5% discount! (not applicable for deployment systems)">'.number_format($_POST['total_volume']).'m3</span>';
+						$volume_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="Consider packing in multiples of 120,000 m3 for a 5% discount! (not applicable for deployment systems or flat fee contracts)">'.number_format($_POST['total_volume']).'m3</span>';
 						$volume_modifier = 1;
 					}
 
@@ -153,7 +154,7 @@ require_once('includes/header.php');
 						</div>
 						<div class="col-md-6 col-sm-12">
 							<h4 class="eve-text">Your Contract</h4>
-							<p>Create To: <a onclick="CCPEVE.showInfo(92753614)">Jon Fisk</a></p>
+							<p>Create To: <a onclick="CCPEVE.showInfo(98423199)">Kibbles And Bits</a></p>
 							<p>Expiration/Completion: 7 days/3 days</p>
 							<p>Contract Reward: <?php echo number_format($total_fee).' ISK'; ?></p>
 							<p>Contract Collateral: <?php echo number_format($total_collateral).' ISK'; ?></p>

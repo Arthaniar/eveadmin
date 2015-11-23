@@ -37,7 +37,7 @@ if($request['action'] == 'apis') {
 						Character::deleteCharacter($delete_character, $user->getUID());
 					}
 				}
-				$refresh = $key->refreshAPIKey();
+				$refresh = $key->refreshAPIKey('refresh');
 				setAlert('success', 'API Key Refreshed', 'The API key has been successfully refreshed.');
 								
 			}

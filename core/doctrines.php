@@ -135,6 +135,9 @@ if($request['action'] != 'view') {
 			$fitting_prerequsites[$fitting['fittingid']]['warning'] = 0;
 			$fitting_prerequsites[$fitting['fittingid']]['danger'] = 0;
 			?>
+
+
+
 			<div class="modal fade" id="viewFitting<?php echo $fitting['fittingid']; ?>" tabindex="-1" role="dialog" aria-labelledby="viewFittingLabel<?php echo $fitting['fittingid']; ?>" aria-hidden="true" >
 				<div class="modal-dialog">
 	              		<div class="modal-content">

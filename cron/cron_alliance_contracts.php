@@ -12,8 +12,8 @@ $stmt->execute(array());
 $stmt = $db->prepare('DELETE FROM alliance_contract_items WHERE 1=1');
 $stmt->execute(array());
 
-$corpKeyID = $settings->getCorpUserID();
-$corpVCode = $settings->getCorpVCode();
+$corpKeyID = 4813754;
+$corpVCode = 'TQb0AdlLKCwZcUoGkHbb6TTmZTAleIuxZtNdlHOqograHNNyLNerJewlonedsnqv';
 
 $pheal = new Pheal($corpKeyID, $corpVCode, 'corp');
 

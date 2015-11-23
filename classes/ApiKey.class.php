@@ -42,43 +42,48 @@ class ApiKey {
 
 		try {
 			$response = $pheal->APIKeyInfo();
-			$this->keyStatus = 1;
-			$this->accessMask = $response->key->accessMask;
-			$this->expires = $response->key->expires;
-			$this->keyType = $response->key->type;
+			if(!isset($response->code) AND $response->key->accessMask & MINIMUM_API) {
 
-			if($response->key->expires == NULL) {
-				$this->expires = 'No Expiration';
-			} else {
+				$this->keyStatus = 1;
+				$this->accessMask = $response->key->accessMask;
 				$this->expires = $response->key->expires;
-			}
-
-			$response2 = $pheal->AccountStatus();
-			if($response2->paidUntil == NULL) {
-				$this->accountStatus = "Account Unsubscribed";
-			} else {
-				$this->accountStatus = $response2->paidUntil;
-			}
-			$i = 1;
-			foreach($response->key->characters as $character) {
-				if($character->allianceID == "0"){
-					$allianceID = 0;
-					$allianceName = "No Alliance";
+				$this->keyType = $response->key->type;
+				if($response->key->expires == NULL) {
+					$this->expires = 'No Expiration';
 				} else {
-					$allianceID = $character->allianceID;
-					$allianceName = $character->allianceName;
+					$this->expires = $response->key->expires;
 				}
 
-				$this->characters[$i] = array( 'characterName' => $character->characterName,
-											   'characterID' => $character->characterID,
-											   'corporationName' => $character->corporationName,
-											   'corporationID' => $character->corporationID,
-											   'allianceName' => $allianceName,
-											   'allianceID' => $allianceID);
-				$i++;
+				$response2 = $pheal->AccountStatus();
+				if($response2->paidUntil == NULL) {
+					$this->accountStatus = "Account Unsubscribed";
+				} else {
+					$this->accountStatus = $response2->paidUntil;
+				}
+				$i = 1;
+				foreach($response->key->characters as $character) {
+					if($character->allianceID == "0"){
+						$allianceID = 0;
+						$allianceName = "No Alliance";
+					} else {
+						$allianceID = $character->allianceID;
+						$allianceName = $character->allianceName;
+					}
+
+					$this->characters[$i] = array( 'characterName' => $character->characterName,
+												   'characterID' => $character->characterID,
+												   'corporationName' => $character->corporationName,
+												   'corporationID' => $character->corporationID,
+												   'allianceName' => $allianceName,
+												   'allianceID' => $allianceID);
+					$i++;
+				}
+			} else {
+				$this->keyStatus = 0;
+				$this->keyError = $this->parseKeyError($response->code, 'code');
 			}
 		} catch (\Pheal\Exceptions\PhealException $e) {
-			$this->keyError = $this->parseKeyError($e);
+			$this->keyError = $this->parseKeyError($e, 'exception');
 
 			$this->keyStatus = 0;
 			setAlert('danger', 'API Key Error', $e->getMessage());
@@ -137,11 +142,16 @@ class ApiKey {
 	}
 
 	// Responsible for parsing API key errors
-	public function parseKeyError($exception) {
+	public function parseKeyError($exception, $type) {
 		global $settings;
 
-		$this->errorCode = $exception->code;
-		$keyErrorMessage = $exception->getMessage();
+		if($type == 'exception') {
+			$this->errorCode = $exception->code;
+			$keyErrorMessage = $exception->getMessage();
+		} else {
+			$this->errorCode = $exception;
+			$keyErrorMessage = 'Unknown Error';
+		}
 
 		$slackDirectorNotification = FALSE;
 		$slackMemberNotification = TRUE;
@@ -177,14 +187,14 @@ class ApiKey {
 		return $keyErrorMessage;
 	}
 
-	public function refreshAPIKey() {
+	public function refreshAPIKey($type) {
 		global $settings;
 		if($this->keyStatus == 1 AND $this->accessMask == MINIMUM_API AND $this->expires == 'No Expiration' AND $this->keyType == 'Account') {
 
 			$update = $this->updateAPIKey();
 
 			if($update) {
-				if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
+				if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications() AND $type == 'new') {
 					sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'New API Key submitted by '.User::fetchUserName($this->uid).'.', 'aura', 'chat.postMessage');
 				}
 
@@ -207,22 +217,22 @@ class ApiKey {
 				return TRUE;
 
 			}
-		} elseif($this->keyStatus != 1) {
+		} elseif($this->keyStatus != 1 AND $type == 'new') {
 			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
 				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected as it is invalid.', 'aura', 'chat.postMessage');
 			}
 			setAlert('danger', 'The API Key Is Invalid', 'The API Key provided is invalid and cannot be used. Please create a new API key, and ensure you have copied the keyID and verification code correctly.');
-		} elseif(!($this->accessMask == MINIMUM_API) AND $this->getKeyStatus() == 1) {
+		} elseif(!($this->accessMask == MINIMUM_API) AND $this->getKeyStatus() == 1 AND $type == "new") {
 			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
 				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected due to an incorrect access mask.', 'aura', 'chat.postMessage');
 			}
 			setAlert('danger', 'The API Key Does Not Meet Minimum Requirements', 'The required minimum Access Mask for API keys is '.MINIMUM_API.'. Please create a new key using the Create Key link.');
-		} elseif($this->expires != 'No Expiration') {
+		} elseif($this->expires != 'No Expiration' AND $type == "new") {
 			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
 				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected because it has an expiration.', 'aura', 'chat.postMessage');
 			}
 			setAlert('danger', 'The API Key Expires', 'The provided API Key has an expiration set. Please create a new key using the Create Key link and ensure you select the No Expiration checkbox.');
-		} elseif($this->keyType != 'Account') {
+		} elseif($this->keyType != 'Account' AND $type == "new") {
 			if($settings->getSlackIntegration() AND $settings->getSlackAPINotifications()) {
 				sendComplexSlackNotification($settings->getSlackAuthToken(), $settings->getGroupTicker().' Auth Notifications', $settings->getSlackAPIChannel(), 'API Key submitted by '.User::fetchUserName($this->uid).' has been rejected because it is a single character key.', 'aura', 'chat.postMessage');
 			}

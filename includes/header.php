@@ -69,12 +69,12 @@
                   <li class="divider"></li>
                   <li class="dropdown-header">Industry Tools</li>
                   <li><a href="/orders/">My Orders</a></li>
-                  <li><a href="/contracts/">My Contracts</a></li>
+                  <li><a href="#">My Contracts</a></li>
                   <li><a href="/industry/">My Industry</a></li>
                   <li class="divider"></li>
                   <li class="dropdown-header">Market Tools</li>
                   <li><a href="/shop/">Corp Shop</a></li>
-                  <li><a href="/contracts/alliance/">Alliance Contracts</a></li>
+                  <li><a href="/contracts/">Alliance Contracts</a></li>
                 </ul>
               </li>
               <li class="dropdown">

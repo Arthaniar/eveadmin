@@ -50,8 +50,8 @@ function uriChecker() {
 function bootstrapper($request) {
 	if(file_exists(DOCUMENT_ROOT.'/core/'.$request['page'].'.php')) {
 		$require_this = DOCUMENT_ROOT.'/core/'.$request['page'].'.php';
-	} elseif($request['page'] == 'modules' AND file_exists(DOCUMENT_ROOT.'/modules/'.$request['action'].'.php')) {
-		$require_this = DOCUMENT_ROOT.'/modules/'.$request['action'].'.php';
+	} elseif(file_exists(DOCUMENT_ROOT.'/modules/'.$request['page'].'.php')) {
+		$require_this = DOCUMENT_ROOT.'/modules/'.$request['page'].'.php';
 	} elseif($request['page'] == NULL) {
 		$require_this = DOCUMENT_ROOT.'/core/dashboard.php';
 	} else {
