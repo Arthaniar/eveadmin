@@ -21,6 +21,7 @@ require('includes/header-no-nav.php');
 								<input class="form-control" type="password" placeholder="Password" name="password" style="margin-top: 5px">
 							</fieldset>
 							<input class="btn btn-primary btn-lg eve-text pull-right" style="margin-top: 5px; margin-bottom: 5px; border-radius: 0px" type="submit" name="login" value="Log In">
+							<!-- <a href="https://login.eveonline.com/oauth/authorize/?response_type=code&redirect_uri=https://my.dogft.com/sso&client_id=828d034261f941cba178264d6274008f&scope=publicData characterFittingsRead characterFittingsWrite&state=<?php echo hash('sha256', 'EveAdmin'); ?>"><img src="/img/eve-sso.png"></a> -->
 							<a href="/register/1/" class="btn btn-info btn-lg eve-text pull-right" style="margin-right: 5px; margin-top: 5px; margin-bottom: 5px; border-radius: 0px;">Create Account</a>
 							<a style="color: #65a9cc; margin-top: 15px;" href="/recover/" class="pull-left">Forgot password?</a>
 						</form>
