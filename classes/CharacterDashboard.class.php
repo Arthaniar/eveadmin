@@ -26,24 +26,28 @@ class CharacterDashboard {
 		$groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 		if($stmt->rowCount() >= 1 AND !$spycheck) {
+			$this->characters = array();
+			$usedcharacters = array();
 			foreach($groups as $group) {
 				$stmt = $db->prepare('SELECT character_id FROM user_character_group_assignment WHERE uid = ? AND character_group_id = ? and character_id != ?');
 				$stmt->execute(array($uid, $group['character_group_id'], $mainCharacterID));
 				$fetchCharacterIDs= $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-				$this->characters = array();
-				$this->characters[$group['character_group_name']] = array();
-				$this->characters[$group['character_group_name']]['name'] = $group['character_group_name'];
+				if($stmt->rowCount() >= 1) {
+					$this->characters[$group['character_group_name']] = array();
+					$this->characters[$group['character_group_name']]['name'] = $group['character_group_name'];
 
-				$i = 0;
+					$i = 0;
 
-				foreach($fetchCharacterIDs as $character) {
-					$stmt = $db->prepare('SELECT characters.charid,user_apikeys.userid,user_apikeys.vcode,user_apikeys.mask FROM characters JOIN user_apikeys ON characters.userid = user_apikeys.userid WHERE charid = ? AND showchar = 1 ORDER BY skillpoints DESC');
-					$stmt->execute(array($character['character_id']));
-					$fetchCharacter = $stmt->fetch(PDO::FETCH_ASSOC);	
+					foreach($fetchCharacterIDs as $character) {
+						$stmt = $db->prepare('SELECT characters.charid,user_apikeys.userid,user_apikeys.vcode,user_apikeys.mask FROM characters JOIN user_apikeys ON characters.userid = user_apikeys.userid WHERE charid = ? AND showchar = 1 ORDER BY skillpoints DESC');
+						$stmt->execute(array($character['character_id']));
+						$fetchCharacter = $stmt->fetch(PDO::FETCH_ASSOC);
 
-					$this->characters[$group['character_group_name']][$i] = new Character($fetchCharacter['charid'], $fetchCharacter['userid'], $fetchCharacter['vcode'], $fetchCharacter['mask'], $db, $user);
-					$i++;			
+						$this->characters[$group['character_group_name']][$i] = new Character($fetchCharacter['charid'], $fetchCharacter['userid'], $fetchCharacter['vcode'], $fetchCharacter['mask'], $db, $user);
+						$usedcharacters[] = $fetchCharacter['charid'];
+						$i++;			
+					}
 				}
 			}
 
@@ -51,7 +55,6 @@ class CharacterDashboard {
 			$stmt->execute(array($uid, $mainCharacterID));
 			$allFetch = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			$this->characters = array();
 			$this->characters['All Characters'] = array();
 			$this->characters['All Characters']['name'] = 'All Characters';
 
@@ -61,8 +64,10 @@ class CharacterDashboard {
 			$stmtKeys = $db->prepare('SELECT * FROM user_apikeys WHERE userid = ? LIMIT 1');
 
 			foreach($allFetch as $character){
-				$this->characters['All Characters'][$i] = new Character($character['charid'], $character['userid'], $character['vcode'], $character['mask'], $db, $user);
-				$i++;
+				if(!in_array($character['charid'], $usedcharacters)) {
+					$this->characters['All Characters'][$i] = new Character($character['charid'], $character['userid'], $character['vcode'], $character['mask'], $db, $user);
+					$i++;
+				}
 			}
 
 		} else {

@@ -19,8 +19,6 @@ if(isset($_POST['character_group'])) {
 		$groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 		if($stmt->rowCount() == 1) {
-
-			var_dump($_POST);
 			$stmt = $db->prepare('UPDATE user_character_groups SET character_group_order = character_group_order+1 WHERE character_group_order >= ?');
 			$stmt->execute(array($_POST['character_group_order']));
 
@@ -36,6 +34,9 @@ if(isset($_POST['character_group'])) {
 
 		$stmt = $db->prepare('DELETE FROM user_character_group_assignment WHERE character_group_id = ? AND uid = ?');
 		$stmt->execute(array($_POST['character_group_id'],$user->getUID()));		
+	} elseif($_POST['character_group'] == 'edit') {
+		$stmt = $db->prepare('INSERT INTO user_character_group_assignment (uid,character_group_id,character_id) VALUES (?,?,?) ON DUPLICATE KEY UPDATE character_group_id=VALUES(character_group_id)');
+		$stmt->execute(array($user->getUID(), $_POST['character_group_id'], $_POST['character_id']));
 	}
 }
 
@@ -189,10 +190,18 @@ $mainCharacter = new Character($user->getDefaultID(), $user->getDefaultKeyID(), 
 				      			<th class="eve-table-header">Training Time Left</th>
 				      			<th class="eve-table-header">Total Queue Length</th>
 				      			<th class="eve-table-header">ISK Balance</th>
-				      			<th class="eve-table-header">Location</th>
-				      			<th class="eve-table-header">Actions</th>
+				      			<?php if($request['action'] != 'edit') {
+				      				?>
+					      			<th class="eve-table-header">Location</th>
+					      			<th class="eve-table-header">Actions</th>
+					      			<?php
+					      		} else {
+					      			?>
+					      			<th class="eve-table-header">Character Group</th>
+					      			<?php
+					      		}
+					      		?>
 				      		</tr>
-
 				      		<?php 
 				      		foreach($group as $character) {
 
@@ -214,40 +223,72 @@ $mainCharacter = new Character($user->getDefaultID(), $user->getDefaultKeyID(), 
 					      			<td><span style="<?php echo $trainingTime['color']; ?>" id="<?php echo $character->getCharacterID(); ?>" ><?php echo $trainingTime['timestring']; ?></span></td>
 									<td><span style="<?php echo $queueTime['color']; ?>" id="<?php echo $character->getCharacterID(); ?>" ><?php echo $queueTime['timestring']; ?></span></td>
 					      			<td><?php echo number_format($character->getAccountBalance()); ?> ISK</td>
-					      			<td><?php echo $locationString; ?></td>
-					      			<td>
-						      			<form action="/dashboard/" method="post" style="float: left">
-						      				<input type="hidden" name="action" value="set_primary">
-						      				<input type="hidden" name="characterID" value="<?php echo $character->getCharacterID(); ?>">
-						      				<input type="hidden" name="characterName" value="<?php echo $character->getCharacterName(); ?>">
-						      				<input type="submit" value="Set Primary" class="btn btn-sm btn-primary" name="change_primary_character">
+					      			<?php if($request['action'] != 'edit') {
+				      					?>
+						      			<td><?php echo $locationString; ?></td>
+						      			<td>
+							      			<form action="/dashboard/" method="post" style="float: left">
+							      				<input type="hidden" name="action" value="set_primary">
+							      				<input type="hidden" name="characterID" value="<?php echo $character->getCharacterID(); ?>">
+							      				<input type="hidden" name="characterName" value="<?php echo $character->getCharacterName(); ?>">
+							      				<input type="submit" value="Set Primary" class="btn btn-sm btn-primary" name="change_primary_character">
+							      			</form>
+							      			<form action="/dashboard/" method="post" style="float: left; clear: right; margin-left: 3px">
+							      				<input type="hidden" name="characterID" value="<?php echo $character->getCharacterID(); ?>">
+							      				<input type="hidden" name="action" value="hide_character">
+							      				<input type="submit" value="Hide" class="btn btn-sm btn-warning" name="hide_character">
+							      			</form>
+						      			</td>
+						      			<?php
+						      		} else {
+						      			$stmt = $db->prepare('SELECT * FROM user_character_groups WHERE uid = ? ORDER BY character_group_order ASC');
+						      			$stmt->execute(array($user->getUID()));
+						      			$character_groups = $stmt->fetchAll(PDO::FETCH_ASSOC);
+						      			?>
+						      			<td>
+						      			<form method="post" action="/dashboard/edit/">
+						      				<input type="hidden" name="character_group" value="edit">
+						      				<input type="hidden" name="character_id" value="<?php echo $character->getCharacterID(); ?>">
+						      				<select name="character_group_id" class="form-control">
+						      					<?php
+						      					foreach($character_groups as $character_group) {
+						      						?>
+						      						<option style="background-color: rgb(21,21,21)" value="<?php echo $character_group['character_group_id']; ?>"><?php echo $character_group['character_group_name']; ?></option>
+						      						<?php
+						      					}
+						      					?>
+						      					<option style="background-color: rgb(21,21,21)" value="all">Ungrouped</option>
+						      				</select>
+						      				<input type="submit" class="btn btn-primary btn-sm" value="Update">	
 						      			</form>
-						      			<form action="/dashboard/" method="post" style="float: left; clear: right; margin-left: 3px">
-						      				<input type="hidden" name="characterID" value="<?php echo $character->getCharacterID(); ?>">
-						      				<input type="hidden" name="action" value="hide_character">
-						      				<input type="submit" value="Hide" class="btn btn-sm btn-warning" name="hide_character">
-						      			</form>
-					      			</td>
+						      			</td>
+						      			<?php
+						      		}
+						      		?>
 					      		</tr>
 				      			<?php
 				      		}
 				      		?>
-				      		<tr>
-				      			<td></td>
-				      			<td></td>
-				      			<td></td>
-				      			<td></td>
-				      			<td></td>
-				      			<td></td>
-				      			<td></td>
-				      			<td>
-				      				<form method="post" action="/dashboard/">
-				      					<input type="hidden" name="action" value="restore">
-				      					<input class="btn btn-primary reskinned-button pull-right" type="submit" value="Restore Hidden Characters" name="restore_characters">
-				      				</form>
-				      			</td>
-				      		</tr>
-
+				      		<?php if($request['action'] != 'edit') {
+				      			?>
+					      		<tr>
+					      			<td></td>
+					      			<td></td>
+					      			<td></td>
+					      			<td></td>
+					      			<td></td>
+					      			<td></td>
+					      			<td></td>
+					      			<td>
+					      				<form method="post" action="/dashboard/">
+					      					<input type="hidden" name="action" value="restore">
+					      					<input class="btn btn-primary reskinned-button pull-right" type="submit" value="Restore Hidden Characters" name="restore_characters">
+					      				</form>
+					      			</td>
+					      		</tr>
+					      		<?php
+					      	}
+					      	?>
 				      	</table>
 					</div>
 				</div>
@@ -279,8 +320,9 @@ $mainCharacter = new Character($user->getDefaultID(), $user->getDefaultKeyID(), 
 	}
 	?>
 
-	<!-- Character Information Section -->
+	<!-- Character Groups Section -->
 	<?php
+	if($request['action'] == 'edit') {
 	// Getting all of the character groups for this user
 	$stmt = $db->prepare('SELECT character_group_name,character_group_id,character_group_order FROM user_character_groups WHERE uid = ? ORDER BY character_group_order ASC');
 	$stmt->execute(array($user->getUID()));
@@ -293,7 +335,7 @@ $mainCharacter = new Character($user->getDefaultID(), $user->getDefaultKeyID(), 
 					<h3 style="text-align: center">Create A Character Group</h3>
 				</div>
 				<div class="row" style="padding-left: 10px; padding-right: 10px">
-					<form method="post" action="/dashboard/" style="text-align: center; margin-top: 10px">
+					<form method="post" action="/dashboard/edit/" style="text-align: center; margin-top: 10px">
 						<formfield>
 							<input type="hidden" name="character_group" value="create">
 						</formfield>
@@ -336,6 +378,9 @@ $mainCharacter = new Character($user->getDefaultID(), $user->getDefaultKeyID(), 
 			</div>
 		</div>
 	</div>
+	<?php
+	}
+	?>
 </div>
 <?php
 require_once('includes/footer.php');
