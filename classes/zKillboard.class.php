@@ -78,68 +78,26 @@ class zKillboard {
 
     /** 
      * handles the lookup for zKillboard. Processes for the type of check before handing off to the connect method
-     * @param $id string
-     * @param $modifier string
+     * @param $lookup array
      * @param $type string
      * @return json object 
      */
 
-    public function getRecentKillmails($id, $modifier, $type) {
+    public function fetchKillmails($lookup, $type, $last_id) {
         // This conditional checks the connectionStatus property for truth. If it is true, it will continue on. If it is false, it will gracefully error out for us.
-        if($this->connectionStatus) {
-            // At this point, we would likely check for cached information within our own database first. That is outside the scope of this mini-tutorial though, so we'll skip it.
-            
+        if($this->connectionStatus) {           
 
-            // Checking to see what type of lookup we're calling, and formatting the request properly.
-            switch($modifier):
-                case 'character':
-                    $modifierName = 'characterID/';
-                    break;
-                case 'corporation':
-                    $modifierName = 'corporationID/';
-                    break;
-                case 'alliance':
-                    $modifierName = 'allianceID/';
-                    break;
-                case 'faction':
-                    $modifierName = 'factionID/';
-                    break;
-                case 'ship':
-                    $modifierName = 'shipTypeID/';
-                    break;
-                case 'group':
-                    $modifierName = 'groupID/';
-                    break;
-                case 'system':
-                    $modifierName = 'solarSystemID/';
-                    break;
-                case 'region':
-                    $modifierName = 'regionID/';
-                    break;
-            endswitch;
+            $url = $this->baseURL.$type."/";
 
-            // Running through the type attribute and getting the specific request we're going to be calling
-            switch($type):
-                case 'kill':
-                    $typeValue = 'kills/';
-                    break;
-                case 'loss':
-                    $typeValue = 'losses/';
-                    break;
-                case 'solo':
-                    $typeValue = 'solo/';
-                    break;
-                case 'wormhole':
-                    $typeValue = 'w-space/';
-                    break;
-                default:
-                    $typeValue = '';
-                    break;
-            endswitch;
+            foreach($lookup as $scope => $id ) {
+                $url .= $scope."/".$id."/";
+            }
+
+            $url .= 'afterKillID/'.$last_id.'./';
 
 
             // Concatenating everything into a properly formatted zKillboard API URL.
-            $url = $this->baseURL.$typeValue.$modifierName.$id.'/orderDirection/desc/';
+            $url .= 'limit/2000/orderDirection/asc/';
 
             // Here we are calling our previously created connect method and feeding it our URL. It will give us decoded json in return.
             $response = $this->connect($url);
