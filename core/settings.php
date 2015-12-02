@@ -28,6 +28,18 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 								 $_POST['slack_ops_channel'],
 								 $user->getGroup()));
 		}
+	} elseif(isset($_POST['disable'])) {
+		if($_POST['disable'] == 'voice') {
+			$stmt = $db->prepare('UPDATE group_settings SET group_voice_integration = 0 WHERE gid = ?');
+			$stmt->execute(array($user->getGroup()));
+		} elseif($_POST['disable'] == 'forum') {
+			$stmt = $db->prepare('UPDATE group_settings SET group_forum_integration = 0 WHERE gid = ?');
+			$stmt->execute(array($user->getGroup()));
+		} elseif($_POST['disable'] == 'slack') {
+			$stmt = $db->prepare('UPDATE group_settings SET group_slack_integration = 0 WHERE gid = ?');
+			$stmt->execute(array($user->getGroup()));
+		}
+
 	}
 } elseif($request['action'] == 'account' OR ($request['action'] == 'group' AND !$user->getCEOAccess())) {
 	$settings_type = 'Account';
