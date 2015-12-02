@@ -2,3 +2,4 @@ vendor
 eveadmin.sublime*
 sftp-config.json
 includes/settings.php
+composer.lock
