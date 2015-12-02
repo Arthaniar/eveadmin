@@ -294,28 +294,23 @@ if($request['action'] == 'api') {
 
 					} elseif($compliance_type == 'Skill') {
 						?>
-						 <div class="tab-content col-md-9">
+						 <div class="col-md-6 opaque-section">
 						    <?php
 						    // Looping through the skill plans to create the subgroup panes
-						    $skillPlanIterative = 0;
 						    $stmt = $db->prepare('SELECT * FROM skillplan_subgroups WHERE skillplan_id = ? ORDER BY subgroup_order ASC');
 						    foreach($skillPlans as $plan) {
 						      $stmt->execute(array($plan['skillplan_id']));
 						      $subGroups = $stmt->fetchAll(PDO::FETCH_ASSOC);
-						      if($skillPlanIterative == 0) {
-						        $planClass = 'active';
-						      } else {
-						        $planClass = '';
-						      }
+
 						      ?>
-						      <div role="tabpanel" class="tab-pane <?php echo $planClass; ?>" id="tab<?php echo $skillPlanIterative; ?>">
+						      <div class="row">
 							      <?php
 							      $stmtSkills = $db->prepare('SELECT * FROM skillplan_tracking WHERE subgroup_id = ? ORDER BY character_name ASC');
 							      foreach($subGroups as $subgroup) {
 							        ?>
 							        <h3 style="text-align: center; margin-top: 0px"><?php echo $subgroup['subgroup_name']; ?></h3>
-							        <div class="panel panel-default">
-							          <table class="table">
+							        <div>
+							          <table class="table table-striped">
 							            <tr>
 							              <th style="background-color: #010102"></th>
 							              <th style="background-color: #010102; text-align: center">Character Name</th>
@@ -329,13 +324,13 @@ if($request['action'] == 'api') {
 							           
 							              if($skill['skills_trained'] >= $skill['skills_total']) {
 							                $iconClass = 'class="meetsreq"';
-							                $colorClass = 'class="goodColorBack"';
+							                $colorClass = 'class="opaque-success"';
 							              } elseif($skill['skills_trained'] < $skill['skills_total'] AND $skill['skills_trained'] != 0) {
 							                $iconClass = 'class="belowreq"';
-							                $colorClass = 'class="okayColorBack"';
+							                $colorClass = 'class="opaque-warning"';
 							              } elseif($skill['skills_trained'] == 0) {
 							                $iconClass = 'class="nottrained"';
-							                $colorClass = 'class="badColorBack"';
+							                $colorClass = 'class="opaque-danger"';
 							              }
 							              ?>
 							              <tr <?php echo $colorClass; ?>>
