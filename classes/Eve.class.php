@@ -144,4 +144,21 @@ class Eve {
 			return $station['stationName'];
 		}
 	}
+
+	public function getSystemName($systemID) {
+		$stmt = $this->db->prepare('SELECT solarSystemName FROM mapSolarSystems WHERE solarSystemID = ? LIMIT 1');
+		$stmt->execute(array($systemID));
+		$system = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		if(!isset($system['solarSystemName']) OR $system['solarSystemName'] == NULL) {
+			var_dump($systemID);
+			var_dump($system);
+			die;
+			$systemName = 'Unknown System';
+		} else {
+			$systemName = $system['solarSystemName'];
+		}
+
+		return $systemName;
+	}
 }
