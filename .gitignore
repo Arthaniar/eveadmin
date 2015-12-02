@@ -1,5 +1,10 @@
-vendor
+## Site-specific Files
+includes/settings.php
+
+## Sublime Text Files
 eveadmin.sublime*
 sftp-config.json
-includes/settings.php
+
+## PHP Composer Files
+vendor
 composer.lock
