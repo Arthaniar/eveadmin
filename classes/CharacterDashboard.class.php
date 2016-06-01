@@ -43,6 +43,10 @@ class CharacterDashboard {
 						$stmt = $db->prepare('SELECT characters.charid,user_apikeys.userid,user_apikeys.vcode,user_apikeys.mask FROM characters JOIN user_apikeys ON characters.userid = user_apikeys.userid WHERE charid = ? AND showchar = 1 ORDER BY skillpoints DESC');
 						$stmt->execute(array($character['character_id']));
 						$fetchCharacter = $stmt->fetch(PDO::FETCH_ASSOC);
+						if($fetchCharacter['userid'] == null) {
+							$stmt = $db->prepare('DELETE FROM user_character_group_assignment WHERE uid = ? AND character_id = ?');
+							$stmt->execute(array($uid, $character['character_id']));
+						}
 
 						$this->characters[$group['character_group_name']][$i] = new Character($fetchCharacter['charid'], $fetchCharacter['userid'], $fetchCharacter['vcode'], $fetchCharacter['mask'], $db, $user);
 						$usedcharacters[] = $fetchCharacter['charid'];

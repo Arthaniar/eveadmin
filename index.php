@@ -67,7 +67,7 @@ if($user->getLoginStatus()) {
 
 } else {
 	// The user is not logged in, so we will only let them see the login page unless they're trying to reach register or recover password
-	if($request['page'] != 'recover' AND $request['page'] != 'register' AND $request['page'] != 'alliancecontracts' AND $request['page'] != 'courier' AND $request['page'] != 'contracts') {
+	if($request['page'] != 'skillplans' AND $request['page'] != 'recover' AND $request['page'] != 'register' AND $request['page'] != 'alliancecontracts' AND $request['page'] != 'courier' AND $request['page'] != 'buyback' AND $request['page'] != 'contracts' AND $request['page'] != 'intelligence' AND $request['page'] != 'fleets') {
 		$request['page'] = 'login';
 	}
 }

@@ -129,7 +129,7 @@
                   <ul class="dropdown-menu sub-nav">
                     <li class="dropdown-header">Human Resources</li>
                     <li><a href="/applications/">Membership Applications</a></li>
-                    <li><a href="/spycheck/">Spycheker</a></li>
+                    <li><a href="/spycheck/">Spychecker</a></li>
                     <li><a href="/permissions/">Permissions Management</a></li>
                     <li class="dropdown-header">Compliance and Information</li>
                     <li><a href="/compliance/skill/">Skill Plan Compliance</a></li>

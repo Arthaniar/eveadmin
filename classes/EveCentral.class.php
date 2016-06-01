@@ -103,10 +103,16 @@ class EveCentral {
      * @param $xml object xml object provided by the connect function of this classooking for. choices are: buy, sell
      * @return int requested cost of an object 
      */
-    private function getValue($type, $xml) {
-        return $xml->marketstat->type->$type->min;
-    }
+    private function getValue($type, $xml)
+    {
 
+        if ($type = 'buy') {
+            $value = 'max';
+        } else {
+            $value = 'min';
+        }
+        return $xml->marketstat->type->$type->$value;
+    }
     private function getLocation($location) {
         if($location == "Jita") {
             return '&regionlimit=10000002';

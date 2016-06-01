@@ -1,13 +1,30 @@
 <?php
 
-require_once('includes/header.php');
+require_once 'includes/header.php';
 
 // Checking to see what page we've requested
-if($request['action'] != 'view') {
+if ($request['action'] != 'view') {
 
-	if($request['action'] == 'add') {
+	if ($request['action'] == 'add') {
 		$stmt = $db->prepare('INSERT INTO doctrines (gid,doctrine_name,doctrine_owner,doctrine_use,doctrine_requirement,doctrine_staging) VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE doctrine_owner=VALUES(doctrine_owner),doctrine_use=VALUES(doctrine_use),doctrine_requirement=VALUES(doctrine_requirement),doctrine_staging=VALUES(doctrine_staging)');
-		$stmt->execute(array($user->getGroup(), $_POST['doctrine_name'], $_POST['doctrine_owner'], $_POST['doctrine_use'], $_POST['doctrine_requirement'],$_POST['doctrine_staging']));
+		$stmt->execute(array($user->getGroup(), $_POST['doctrine_name'], $_POST['doctrine_owner'], $_POST['doctrine_use'], $_POST['doctrine_requirement'], $_POST['doctrine_staging']));
+	} elseif ($request['action'] == 'delete') {
+		if ($user->getDirectorAccess()) {
+			$stmt = $db->prepare('SELECT fittingid FROM doctrines_fits WHERE doctrineid = ? AND gid = ?');
+			$stmt->execute(array($request['value'], $user->getGroup()));
+			$fittings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+			foreach ($fittings as $fitting) {
+				$stmt = $db->prepare('DELETE FROM doctrines_fittingmods WHERE fittingid = ?');
+				$stmt->execute(array($fitting['fittingid']));
+			}
+
+			$stmt = $db->prepare('DELETE FROM doctrines_fits WHERE doctrineid = ? AND gid = ?');
+			$stmt->execute(array($request['value'], $user->getGroup()));
+
+			$stmt = $db->prepare('DELETE FROM doctrines WHERE doctrineid = ? and gid = ?');
+			$stmt->execute(array($request['value'], $user->getGroup()));
+		}
 	}
 
 	$stmt = $db->prepare('SELECT * FROM doctrines WHERE gid = ? ORDER BY doctrine_owner,doctrine_name ASC');
@@ -35,26 +52,25 @@ if($request['action'] != 'view') {
 									<th>Staging Location</th>
 								</tr>
 								<?php
-								foreach($doctrines as $doctrine) {
+foreach ($doctrines as $doctrine) {
 
-
-									if($doctrine['doctrine_owner'] == 'group') {
-										$owner = $settings->getGroupTicker();
-									} else {
-										$owner = $doctrine['doctrine_owner'];
-									}
-									?>
+		if ($doctrine['doctrine_owner'] == 'group') {
+			$owner = $settings->getGroupTicker();
+		} else {
+			$owner = $doctrine['doctrine_owner'];
+		}
+		?>
 									<tr>
-										<td><a href="/doctrines/view/<?php echo $doctrine['doctrineid']; ?>"><?php echo $doctrine['doctrine_name'];?></a></td>
+										<td><a href="/doctrines/view/<?php echo $doctrine['doctrineid']; ?>"><?php echo $doctrine['doctrine_name']; ?></a></td>
 										<td><?php echo $owner; ?></td>
-										<td><?php echo $doctrine['doctrine_use'];?></td>
-										<td><?php echo $doctrine['doctrine_requirement'];?></td>
-										<td><?php echo $doctrine['doctrine_staging'];?></td>
+										<td><?php echo $doctrine['doctrine_use']; ?></td>
+										<td><?php echo $doctrine['doctrine_requirement']; ?></td>
+										<td><?php echo $doctrine['doctrine_staging']; ?></td>
 									</tr>
 									<?php
-								}
-								if($user->getDirectorAccess()) {
-									?>
+}
+	if ($user->getDirectorAccess()) {
+		?>
 									<tr>
 										<form action="/doctrines/add/" method="post">
 											<formfield>
@@ -75,8 +91,8 @@ if($request['action'] != 'view') {
 										</form>
 									</tr>
 									<?php
-								}
-								?>
+}
+	?>
 							</table>
 						</div>
 					</div>
@@ -87,21 +103,26 @@ if($request['action'] != 'view') {
 	<?php
 } else {
 
-	if($user->getDirectorAccess()) {
-		if($request['value_2'] == 'addfit') {
-			Fitting::addFitting($request['value'], $_POST['fitting_raw'], $_POST['fitting_role'], $_POST['fitting_priority'], $_POST['fitting_notes'], $user->getGroup(), $user);
-		} elseif($request['value_2'] == 'deletefit') {
-	        $stmt = $db->prepare('DELETE FROM doctrines_fittingmods WHERE fittingid = ?');
-	        $stmt->execute(array($_POST['fitting_id']));
-	        $stmt = $db->prepare('DELETE FROM doctrines_fits WHERE fittingid = ?');
-	        $stmt->execute(array($_POST['fitting_id']));
-		} elseif($request['value_2'] == 'editfit') {
+	if ($user->getDirectorAccess()) {
+		if ($request['value_2'] == 'addfit') {
+			Fitting::addFitting($request['value'], $_POST['fitting_raw'], $_POST['fitting_modpack'], $_POST['fitting_role'], $_POST['fitting_priority'], $_POST['fitting_notes'], $user->getGroup(), $user);
+		} elseif ($request['value_2'] == 'deletefit') {
+			$stmt = $db->prepare('DELETE FROM doctrines_fittingmods WHERE fittingid = ?');
+			$stmt->execute(array($_POST['fitting_id']));
+			$stmt = $db->prepare('DELETE FROM doctrines_fits WHERE fittingid = ?');
+			$stmt->execute(array($_POST['fitting_id']));
+		} elseif ($request['value_2'] == 'editfit') {
 			$stmt = $db->prepare('UPDATE doctrines_fits SET fitting_name = ?, fitting_role = ?, fitting_priority = ?, fitting_notes = ? WHERE fittingid = ?');
 			$stmt->execute(array($_POST['fitting_name'], $_POST['fitting_role'], $_POST['fitting_priority'], $_POST['fitting_notes'], $_POST['fitting_id']));
-			setAlert('success', 'Fitting Updated', 'The '.$_POST['fitting_name'].' fit has been successfully edited.');
-		} elseif($request['value_2'] == 'editdoctrine') {
+			setAlert('success', 'Fitting Updated', 'The ' . $_POST['fitting_name'] . ' fit has been successfully edited.');
+		} elseif ($request['value_2'] == 'editdoctrine') {
 			$stmt = $db->prepare('UPDATE doctrines SET doctrine_name = ?, doctrine_use = ?, doctrine_requirement = ?, doctrine_owner = ?, doctrine_staging = ? WHERE doctrineid = ?');
-			$stmt->execute(array($_POST['doctrine_name'],$_POST['doctrine_use'],$_POST['doctrine_requirement'],$_POST['doctrine_owner'],$_POST['doctrine_staging'],$_POST['doctrine_id']));
+			$stmt->execute(array($_POST['doctrine_name'], $_POST['doctrine_use'], $_POST['doctrine_requirement'], $_POST['doctrine_owner'], $_POST['doctrine_staging'], $_POST['doctrine_id']));
+		}
+
+		if (isset($_POST['add_shared_fitting'])) {
+			$stmt_add_shared_fitting = $db->prepare('INSERT INTO doctrines_shared_fittings (fittingid,alternate_doctrine_id) VALUES (?,?)');
+			$stmt_add_shared_fitting->execute(array($_POST['add_shared_fitting'], $_POST['alternate_doctrine_id']));
 		}
 	}
 
@@ -112,25 +133,25 @@ if($request['action'] != 'view') {
 	$stmt->execute(array($request['value'], $user->getGroup()));
 	$doctrine = $stmt->fetch(PDO::FETCH_ASSOC);
 
-	$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? AND fitting_role = "Logistics" AND gid = ? ORDEr BY fitting_priority DESC');
-	$stmt->execute(array($request['value'], $user->getGroup()));
+	$stmt = $db->prepare('SELECT doctrines_fits.*,doctrines_shared_fittings.alternate_doctrine_id FROM doctrines_fits LEFT JOIN doctrines_shared_fittings ON doctrines_fits.fittingid = doctrines_shared_fittings.fittingid WHERE ( doctrineid = ? OR alternate_doctrine_id = ? ) AND fitting_role = "Logistics" AND gid = ? ORDER BY fitting_priority DESC');
+	$stmt->execute(array($request['value'], $request['value'], $user->getGroup()));
 	$fittings['logistics'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-	$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? AND fitting_role = "Mainline" AND gid = ? ORDEr BY fitting_priority DESC');
-	$stmt->execute(array($request['value'], $user->getGroup()));
+	$stmt = $db->prepare('SELECT doctrines_fits.*,doctrines_shared_fittings.alternate_doctrine_id FROM doctrines_fits LEFT JOIN doctrines_shared_fittings ON doctrines_fits.fittingid = doctrines_shared_fittings.fittingid WHERE ( doctrineid = ? OR alternate_doctrine_id = ? ) AND fitting_role = "Mainline" AND gid = ? ORDEr BY fitting_priority DESC');
+	$stmt->execute(array($request['value'], $request['value'], $user->getGroup()));
 	$fittings['mainline'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-	$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? AND fitting_role = "DPS" AND gid = ? ORDEr BY fitting_priority DESC');
-	$stmt->execute(array($request['value'], $user->getGroup()));
+	$stmt = $db->prepare('SELECT doctrines_fits.*,doctrines_shared_fittings.alternate_doctrine_id FROM doctrines_fits LEFT JOIN doctrines_shared_fittings ON doctrines_fits.fittingid = doctrines_shared_fittings.fittingid WHERE ( doctrineid = ? OR alternate_doctrine_id = ? ) AND fitting_role = "DPS" AND gid = ? ORDEr BY fitting_priority DESC');
+	$stmt->execute(array($request['value'], $request['value'], $user->getGroup()));
 	$fittings['dps'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-	$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? AND fitting_role != "Logistics" AND fitting_role != "Mainline" AND fitting_role != "DPS" AND gid = ? ORDEr BY fitting_priority DESC');
-	$stmt->execute(array($request['value'], $user->getGroup()));
+	$stmt = $db->prepare('SELECT doctrines_fits.*,doctrines_shared_fittings.alternate_doctrine_id FROM doctrines_fits LEFT JOIN doctrines_shared_fittings ON doctrines_fits.fittingid = doctrines_shared_fittings.fittingid WHERE ( doctrineid = ? OR alternate_doctrine_id = ? ) AND fitting_role != "Logistics" AND fitting_role != "Mainline" AND fitting_role != "DPS" AND gid = ? ORDEr BY fitting_priority DESC');
+	$stmt->execute(array($request['value'], $request['value'], $user->getGroup()));
 	$fittings['other'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 	// The stuff below is the modal section, which will be called later in the page
-	foreach($fittings as $fitting_group) {
-		foreach($fitting_group as $fitting) {
+	foreach ($fittings as $fitting_group) {
+		foreach ($fitting_group as $fitting) {
 			$fitting_prerequsites[$fitting['fittingid']] = array();
 			$fitting_prerequsites[$fitting['fittingid']]['warning'] = 0;
 			$fitting_prerequsites[$fitting['fittingid']]['danger'] = 0;
@@ -146,7 +167,7 @@ if($request['action'] != 'view') {
 	                  			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 	                  				<span aria-hidden="true">&times;</span>
 	                  			</button>
-	                  			<h4 class="modal-title" id="viewFittingLabel<?php echo $fitting['fittingid']; ?>"><?php echo $fitting['fitting_name'].' - '.$doctrine['doctrine_name']; ?></h4>
+	                  			<h4 class="modal-title" id="viewFittingLabel<?php echo $fitting['fittingid']; ?>"><?php echo $fitting['fitting_name'] . ' - ' . $doctrine['doctrine_name']; ?></h4>
 	                		</div>
 	                		<!-- Modal Body -->
 	                		<div class="modal-body" style="text-align: center">
@@ -162,21 +183,21 @@ if($request['action'] != 'view') {
 								    	</a>
 								    </li>
 								    <li role="presentation">
-								    	<a class="navigation-option" href="#skills<?php echo $fitting['fittingid']; ?>" aria-controls="skills<?php echo $fitting['fittingid']; ?>" role="tab" data-toggle="tab">
-								    		Minimum Required Skills
+								    	<a class="navigation-option" href="#market<?php echo $fitting['fittingid']; ?>" aria-controls="skills<?php echo $fitting['fittingid']; ?>" role="tab" data-toggle="tab">
+								    		Market Information
 								    	</a>
 								    </li>
 								    <?php
-								    if($user->getDirectorAccess()) {
-								    	?>
+if ($user->getDirectorAccess()) {
+				?>
 									    <li role="presentation">
 									    	<a class="navigation-option" href="#edit<?php echo $fitting['fittingid']; ?>" aria-controls="skills<?php echo $fitting['fittingid']; ?>" role="tab" data-toggle="tab">
 									    		Edit Fitting
 									    	</a>
 									    </li>
 									    <?php
-									}
-								    ?>
+}
+			?>
 								</ul>
 								<!-- Modal Tab Panels -->
 								<div class="tab-content">
@@ -186,28 +207,28 @@ if($request['action'] != 'view') {
 												<tr>
 													<th><img style="width: 24px; height: 24px;" src="/img/slot_ship.jpg"></th>
 													<th></th>
-													<th style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']).', '.$fitting['fitting_name']; ?></th>
+													<th style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']) . ', ' . $fitting['fitting_name']; ?></th>
 													<th></th>
 												</tr>
 												<?php
-													// Creating the IGB Fitting Array
-													$igb_fitting_array = array();
+// Creating the IGB Fitting Array
+			$igb_fitting_array = array();
 
-													$preRequisites = Fitting::checkItemPrerequisites($fitting['fitting_ship'], $user->getDefaultID());
+			$preRequisites = Fitting::checkItemPrerequisites($fitting['fitting_ship'], $user->getDefaultID());
 
-													if($preRequisites) {
-														$prereq_color = 'class="opaque-success"';
-													} elseif($preRequisites == 'WARNING') {
-														$prereq_color = 'class="opaque-warning"';
-														$fitting_prerequsites[$fitting['fittingid']]['warning']++;
-													} else {
-														$prereq_color = 'class="opaque-danger"';
-														$fitting_prerequsites[$fitting['fittingid']]['danger']++;
-													}
+			if ($preRequisites) {
+				$prereq_color = 'class="opaque-success"';
+			} elseif ($preRequisites == 'WARNING') {
+				$prereq_color = 'class="opaque-warning"';
+				$fitting_prerequsites[$fitting['fittingid']]['warning']++;
+			} else {
+				$prereq_color = 'class="opaque-danger"';
+				$fitting_prerequsites[$fitting['fittingid']]['danger']++;
+			}
 
-													// Adding the SHIP Hull ID to the IGB Fitting Array
-													$igb_fitting_array[] = $fitting['fitting_ship'];
-												?>
+			// Adding the SHIP Hull ID to the IGB Fitting Array
+			$igb_fitting_array[] = $fitting['fitting_ship'];
+			?>
 												<tr <?php echo $prereq_color; ?>>
 													<td style="text-align: left; width; 32px"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"></td>
 													<td style="text-align: left; width; 50px"></td>
@@ -220,14 +241,14 @@ if($request['action'] != 'view') {
 													</td>
 												</tr>
 												<?php
-												$stmt = $db->prepare('SELECT * FROM doctrines_fittingmods WHERE fittingid = ? AND module_slot = ?');
+$stmt = $db->prepare('SELECT * FROM doctrines_fittingmods WHERE fittingid = ? AND module_slot = ?');
 
-												// Getting our Subsystems items first
-												$stmt->execute(array($fitting['fittingid'], 'Subsystem'));
-												$subsys_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			// Getting our Subsystems items first
+			$stmt->execute(array($fitting['fittingid'], 'Subsystem'));
+			$subsys_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-												if($stmt->rowCount() >= 1) {
-													?>
+			if ($stmt->rowCount() >= 1) {
+				?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_subsys.jpg"></td>
 														<td></td>
@@ -235,20 +256,20 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($subsys_slots as $subsys) {
-														// Adding subsystems to the IGB Fitting Array
-														$igb_fitting_array[] = $subsys['type_id'].';'.$subsys['module_quantity'];
+foreach ($subsys_slots as $subsys) {
+					// Adding subsystems to the IGB Fitting Array
+					$igb_fitting_array[] = $subsys['type_id'] . ';' . $subsys['module_quantity'];
 
-														$preRequisites = Fitting::checkItemPrerequisites($subsys['type_id'], $user->getDefaultID());
+					$preRequisites = Fitting::checkItemPrerequisites($subsys['type_id'], $user->getDefaultID());
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-														}
-														?>
+					if ($preRequisites) {
+						$prereq_color = 'class="opaque-success"';
+					} elseif ($preRequisites == 'WARNING') {
+						$prereq_color = 'class="opaque-warning"';
+					} else {
+						$prereq_color = 'class="opaque-danger"';
+					}
+					?>
 														<tr <?php echo $prereq_color; ?>>
 															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $subsys['type_id']; ?>_32.png"></td>
 															<td style="text-align: left; width: 50px"><?php echo $subsys['module_quantity']; ?>x</td>
@@ -261,15 +282,15 @@ if($request['action'] != 'view') {
 															</td>
 														</tr>
 														<?php
-													}
-												}
+}
+			}
 
-												// Getting our High Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'High'));
-												$high_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			// Getting our High Slot items first
+			$stmt->execute(array($fitting['fittingid'], 'High'));
+			$high_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-												if($stmt->rowCount() >= 1) {
-													?>
+			if ($stmt->rowCount() >= 1) {
+				?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_hi.png"></td>
 														<td></td>
@@ -277,22 +298,22 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($high_slots as $high) {
-														// Adding high slot items to the IGB Fitting Array
-														$igb_fitting_array[] = $high['type_id'].';'.$high['module_quantity'];
+foreach ($high_slots as $high) {
+					// Adding high slot items to the IGB Fitting Array
+					$igb_fitting_array[] = $high['type_id'] . ';' . $high['module_quantity'];
 
-														$preRequisites = Fitting::checkItemPrerequisites($high['type_id'], $user->getDefaultID());
+					$preRequisites = Fitting::checkItemPrerequisites($high['type_id'], $user->getDefaultID());
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-															$fitting_prerequsites[$fitting['fittingid']]['warning']++;
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-															$fitting_prerequsites[$fitting['fittingid']]['danger']++;
-														}
-														?>
+					if ($preRequisites) {
+						$prereq_color = 'class="opaque-success"';
+					} elseif ($preRequisites == 'WARNING') {
+						$prereq_color = 'class="opaque-warning"';
+						$fitting_prerequsites[$fitting['fittingid']]['warning']++;
+					} else {
+						$prereq_color = 'class="opaque-danger"';
+						$fitting_prerequsites[$fitting['fittingid']]['danger']++;
+					}
+					?>
 														<tr <?php echo $prereq_color; ?>>
 															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $high['type_id']; ?>_32.png"></td>
 															<td style="text-align: left; width: 50px"><?php echo $high['module_quantity']; ?>x</td>
@@ -305,15 +326,15 @@ if($request['action'] != 'view') {
 															</td>
 														</tr>
 														<?php
-													}
-												}
+}
+			}
 
-												// Getting our Mid Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Mid'));
-												$mid_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			// Getting our Mid Slot items first
+			$stmt->execute(array($fitting['fittingid'], 'Mid'));
+			$mid_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-												if($stmt->rowCount() >= 1) {
-													?>
+			if ($stmt->rowCount() >= 1) {
+				?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_mid.png"></td>
 														<td></td>
@@ -321,22 +342,22 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($mid_slots as $mid) {
-														// Adding mid slots to IGB Fitting Array
-														$igb_fitting_array[] = $mid['type_id'].';'.$mid['module_quantity'];
+foreach ($mid_slots as $mid) {
+					// Adding mid slots to IGB Fitting Array
+					$igb_fitting_array[] = $mid['type_id'] . ';' . $mid['module_quantity'];
 
-														$preRequisites = Fitting::checkItemPrerequisites($mid['type_id'], $user->getDefaultID());
+					$preRequisites = Fitting::checkItemPrerequisites($mid['type_id'], $user->getDefaultID());
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-															$fitting_prerequsites[$fitting['fittingid']]['warning']++;
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-															$fitting_prerequsites[$fitting['fittingid']]['danger']++;
-														}
-														?>
+					if ($preRequisites) {
+						$prereq_color = 'class="opaque-success"';
+					} elseif ($preRequisites == 'WARNING') {
+						$prereq_color = 'class="opaque-warning"';
+						$fitting_prerequsites[$fitting['fittingid']]['warning']++;
+					} else {
+						$prereq_color = 'class="opaque-danger"';
+						$fitting_prerequsites[$fitting['fittingid']]['danger']++;
+					}
+					?>
 														<tr <?php echo $prereq_color; ?>>
 															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $mid['type_id']; ?>_32.png"></td>
 															<td style="text-align: left; width: 50px"><?php echo $mid['module_quantity']; ?>x</td>
@@ -349,15 +370,15 @@ if($request['action'] != 'view') {
 															</td>
 														</tr>
 														<?php
-													}
-												}
+}
+			}
 
-												// Getting our Low Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Low'));
-												$low_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			// Getting our Low Slot items first
+			$stmt->execute(array($fitting['fittingid'], 'Low'));
+			$low_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-												if($stmt->rowCount() >= 1) {
-													?>
+			if ($stmt->rowCount() >= 1) {
+				?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_low.png"></td>
 														<td></td>
@@ -365,22 +386,22 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($low_slots as $low) {
-														// Adding low slots to IGB fitting array
-														$igb_fitting_array[] = $low['type_id'].';'.$low['module_quantity'];
+foreach ($low_slots as $low) {
+					// Adding low slots to IGB fitting array
+					$igb_fitting_array[] = $low['type_id'] . ';' . $low['module_quantity'];
 
-														$preRequisites = Fitting::checkItemPrerequisites($low['type_id'], $user->getDefaultID());
+					$preRequisites = Fitting::checkItemPrerequisites($low['type_id'], $user->getDefaultID());
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-															$fitting_prerequsites[$fitting['fittingid']]['warning']++;
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-															$fitting_prerequsites[$fitting['fittingid']]['danger']++;
-														}
-														?>
+					if ($preRequisites) {
+						$prereq_color = 'class="opaque-success"';
+					} elseif ($preRequisites == 'WARNING') {
+						$prereq_color = 'class="opaque-warning"';
+						$fitting_prerequsites[$fitting['fittingid']]['warning']++;
+					} else {
+						$prereq_color = 'class="opaque-danger"';
+						$fitting_prerequsites[$fitting['fittingid']]['danger']++;
+					}
+					?>
 														<tr <?php echo $prereq_color; ?>>
 															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $low['type_id']; ?>_32.png"></td>
 															<td style="text-align: left; width: 50px"><?php echo $low['module_quantity']; ?>x</td>
@@ -393,15 +414,15 @@ if($request['action'] != 'view') {
 															</td>
 														</tr>
 														<?php
-													}
-												}
+}
+			}
 
-												// Getting our Rig Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Rig'));
-												$rig_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			// Getting our Rig Slot items first
+			$stmt->execute(array($fitting['fittingid'], 'Rig'));
+			$rig_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-												if($stmt->rowCount() >= 1) {
-													?>
+			if ($stmt->rowCount() >= 1) {
+				?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_rig.png"></td>
 														<td></td>
@@ -409,20 +430,20 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($rig_slots as $rig) {
-														// Adding rigs to IGB fitting array
-														$igb_fitting_array[] = $rig['type_id'].';'.$rig['module_quantity'];
+foreach ($rig_slots as $rig) {
+					// Adding rigs to IGB fitting array
+					$igb_fitting_array[] = $rig['type_id'] . ';' . $rig['module_quantity'];
 
-														$preRequisites = Fitting::checkItemPrerequisites($low['type_id'], $user->getDefaultID());
+					$preRequisites = Fitting::checkItemPrerequisites($low['type_id'], $user->getDefaultID());
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-														}
-														?>
+					if ($preRequisites) {
+						$prereq_color = 'class="opaque-success"';
+					} elseif ($preRequisites == 'WARNING') {
+						$prereq_color = 'class="opaque-warning"';
+					} else {
+						$prereq_color = 'class="opaque-danger"';
+					}
+					?>
 														<tr <?php echo $prereq_color; ?>>
 															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $rig['type_id']; ?>_32.png"></td>
 															<td style="text-align: left; width: 50px"><?php echo $rig['module_quantity']; ?>x</td>
@@ -435,15 +456,15 @@ if($request['action'] != 'view') {
 															</td>
 														</tr>
 														<?php
-													}
-												}
+}
+			}
 
-												// Getting our Drone / Cargo Slot items first
-												$stmt->execute(array($fitting['fittingid'], 'Drone'));
-												$drone_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			// Getting our Drone / Cargo Slot items first
+			$stmt->execute(array($fitting['fittingid'], 'Drone'));
+			$drone_slots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-												if($stmt->rowCount() >= 1) {
-													?>
+			if ($stmt->rowCount() >= 1) {
+				?>
 													<tr>
 														<td><img style="width: 24px; height: 24px;" src="/img/slot_cargo.jpg"></td>
 														<td></td>
@@ -451,20 +472,20 @@ if($request['action'] != 'view') {
 														<td></td>
 													</tr>
 													<?php
-													foreach($drone_slots as $drone) {
-														// Adding drones and cargo to IGB Fitting Array
-														$igb_fitting_array[] = $drone['type_id'].';'.$drone['module_quantity'];
+foreach ($drone_slots as $drone) {
+					// Adding drones and cargo to IGB Fitting Array
+					$igb_fitting_array[] = $drone['type_id'] . ';' . $drone['module_quantity'];
 
-														$preRequisites = Fitting::checkItemPrerequisites($drone['type_id'], $user->getDefaultID());
+					$preRequisites = Fitting::checkItemPrerequisites($drone['type_id'], $user->getDefaultID());
 
-														if($preRequisites) {
-															$prereq_color = 'class="opaque-success"';
-														} elseif($preRequisites == 'WARNING') {
-															$prereq_color = 'class="opaque-warning"';
-														} else {
-															$prereq_color = 'class="opaque-danger"';
-														}
-														?>
+					if ($preRequisites) {
+						$prereq_color = 'class="opaque-success"';
+					} elseif ($preRequisites == 'WARNING') {
+						$prereq_color = 'class="opaque-warning"';
+					} else {
+						$prereq_color = 'class="opaque-danger"';
+					}
+					?>
 														<tr <?php echo $prereq_color; ?>>
 															<td style="width: 32px; vertical-align: center"><img style="width: 24px; height: 24px;" src="https://image.eveonline.com/InventoryType/<?php echo $drone['type_id']; ?>_32.png"></td>
 															<td style="text-align: left; width: 50px"><?php echo $drone['module_quantity']; ?>x</td>
@@ -477,9 +498,9 @@ if($request['action'] != 'view') {
 															</td>
 														</tr>
 														<?php
-													}
-												}
-												?>
+}
+			}
+			?>
 											</tbody>
 										</table>
 									</div>
@@ -488,12 +509,32 @@ if($request['action'] != 'view') {
 										<p><span style="font-style: italic">Created By:</span> Unknown</p>
 										<p><span style="font-style: italic">Fitting Notes:</span> <?php echo $fitting['fitting_notes']; ?></p>
 									</div>
-									<div role="tabpanel" class="tab-pane" id="skills<?php echo $fitting['fittingid']; ?>">
-										Minimum Required Skills
+									<div role="tabpanel" class="tab-pane" id="market<?php echo $fitting['fittingid']; ?>">
+										<h3>Available Contracts</h3>
+										<table class="table table-striped">
+											<thead>
+												<tr>
+													<th>Location</th>
+													<th>Contract Issuer</th>
+													<th>SRP Status</th>
+													<th>Price</th>
+													<th>Actions</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr>
+													<td>Unavailable</td>
+													<td>Unavailable</td>
+													<td>Unavailable</td>
+													<td>Unavailable</td>
+													<td>Unavailable</td>
+												</tr>
+											</tbody>
+										</table>
 									</div>
 									<?php
-									if($user->getDirectorAccess()) {
-										?>
+if ($user->getDirectorAccess()) {
+				?>
 										<div role="tabpanel" class="tab-pane" id="edit<?php echo $fitting['fittingid']; ?>">
 											<div class="row">
 
@@ -522,7 +563,7 @@ if($request['action'] != 'view') {
 																<option style="background-color: rgb(23,23,23)" value="1">Lowest</option>
 																<option style="background-color: rgb(23,23,23)" value="2">Low</option>
 																<option style="background-color: rgb(23,23,23)" value="4">High</option>
-																<option style="background-color: rgb(23,23,23)" value="5">Highest</option>                              
+																<option style="background-color: rgb(23,23,23)" value="5">Highest</option>
 															</select>
 														</formfield>
 														<formfield>
@@ -548,7 +589,7 @@ if($request['action'] != 'view') {
 												<div class="col-md-4 col-sm-6">
 													<div class="row">
 														<h3 class="eve-text" style="text-align: center">Delete Fitting</h3>
-														<form method="post" action="/doctrines/view/<?php echo $doctrine['doctrineid'];?>/deletefit">
+														<form method="post" action="/doctrines/view/<?php echo $doctrine['doctrineid']; ?>/deletefit">
 															<input type="hidden" name="fitting_id" value="<?php echo $fitting['fittingid']; ?>">
 															<input class="btn btn-danger eve-text" style="margin-top: 5px; margin-bottom: 10px; font-size: 125%" type="submit" value="Delete Fitting">
 														</form>
@@ -562,27 +603,27 @@ if($request['action'] != 'view') {
 											</div>
 										</div>
 										<?php
-									}
-									?>
+}
+			?>
 								</div>
 	                        </div>
 	                        <!-- Modal Footer -->
 	                		<div class="modal-footer">
 	                			<?php
-	                			$igb_fitting_string = implode(":", $igb_fitting_array).'::';
-	                			?>
+$igb_fitting_string = implode(":", $igb_fitting_array) . '::';
+			?>
 	                			<button class="btn btn-primary" onclick="CCPEVE.showFitting('<?php echo $igb_fitting_string; ?>')">Open Fitting In EVE</button>
 	                  			<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 	                		</div>
 	              		</div>
 	           	</div>
-	        </div> 
+	        </div>
 			<?php
-		}
+}
 	}
 
 	// This is the "Add Fitting" Modal
-	if($user->getDirectorAccess()) {
+	if ($user->getDirectorAccess()) {
 		?>
 		<div class="modal fade" id="addFittingModal" tabindex="-1" role="dialog" aria-labelledby="addFittingModalLabel" aria-hidden="true" >
 			<div class="modal-dialog">
@@ -600,12 +641,12 @@ if($request['action'] != 'view') {
 								<option style="background-color: rgb(23,23,23)" value="1">Lowest</option>
 								<option style="background-color: rgb(23,23,23)" value="2">Low</option>
 								<option style="background-color: rgb(23,23,23)" value="4">High</option>
-								<option style="background-color: rgb(23,23,23)" value="5">Highest</option>                              
+								<option style="background-color: rgb(23,23,23)" value="5">Highest</option>
 							</select>
 							<br />
 							<label for="fitting_owner">Fitting Used By:</label>
 							<select  class="form-control" name="fitting_owner" style="margin-bottom: 8px; width: 25%; margin-left: auto; margin-right: auto;">
-								<option style="background-color: rgb(23,23,23)" value="group"><?php $settings->getGroupTicker(); ?></option>
+								<option style="background-color: rgb(23,23,23)" value="group"><?php $settings->getGroupTicker();?></option>
 								<option style="background-color: rgb(23,23,23)" value="LAWN Alliance">LAWN Alliance</option>
 								<option style="background-color: rgb(23,23,23)" value="Imperium Coalition">Imperium Coalition</option>
 							</select>
@@ -622,6 +663,8 @@ if($request['action'] != 'view') {
 							<br />
 							<textarea class="form-control" style="width: 100%" rows="8" type="text" name="fitting_raw" placeholder="Raw Fitting from In-Game or EFT"></textarea>
 							<br />
+							<textarea class="form-control" style="width: 100%" rows="8" type="text" name="fitting_modpack" placeholder="Include any additional fitting modpack here in EFT format"></textarea>
+							<br />
 							<textarea class="form-control" style="width: 100%" rows="8" type="text" name="fitting_notes" placeholder="Fitting Notes and Details"></textarea>
 						</div>
 						<div class="modal-footer">
@@ -632,9 +675,9 @@ if($request['action'] != 'view') {
 				</form>
 			</div>
 		</div>
-            
+
 		<?php
-	}
+}
 	// This is the main page section
 	?>
 	<div class="opaque-container" role="tablist" aria-multiselectable="true">
@@ -645,15 +688,33 @@ if($request['action'] != 'view') {
 					<div class="row">
 						<h1 class="eve-text" style="margin-top: 10px; text-align: center; font-size: 200%; font-weight: 700"><a class="box-title-link" style="text-decoration: none" href="/doctrines/">Fleet Doctrines</a> > <?php echo $doctrine['doctrine_name']; ?></h1>
 					</div>
-					<?php 
-					if($user->getDirectorAccess()) { 
-						if($request['value_2'] == 'editmode') {
-							?>
+					<?php
+if ($user->getDirectorAccess()) {
+		if ($request['value_2'] == 'editmode') {
+			?>
 							<div class="row">
 								<div class="col-md-4 col-sm-12" style="text-align: center; padding-top: 10px; padding-bottom: 20px">
 									<button type="button" class="btn btn-success eve-text" data-toggle="modal" data-target="#addFittingModal" style="text-align: center; font-size: 125%">
 			                      		Add New Fitting
 			                    	</button>
+			                    	<br />
+			                    	<form method="post" action="/doctrines/view/<?php echo $doctrine['doctrineid']; ?>/editmode/">
+			                    		<br />
+			                    		<label>Add Shared Fitting</label>
+			                    		<input type="hidden" name="alternate_doctrine_id" value="<?php echo $doctrine['doctrineid']; ?>">
+			                    		<select name="add_shared_fitting" class="form-control" style="margin-bottom: 8px; width: 100%; margin-left: auto; margin-right: auto;">
+			                    			<?php
+$stmt_lookup_shared_fittings = $db->prepare('SELECT fittingid,fitting_name,doctrines.doctrine_name FROM  doctrines_fits JOIN doctrines ON doctrines_fits.doctrineid = doctrines.doctrineid WHERE doctrines_fits.gid = ? ORDER BY doctrine_name,fitting_name');
+			$stmt_lookup_shared_fittings->execute(array($user->getGroup()));
+			$lookupFits = $stmt_lookup_shared_fittings->fetchAll(PDO::FETCH_ASSOC);
+
+			foreach ($lookupFits as $possibleFit) {
+				?><option style="background-color: rgb(23,23,23)" value=<?php echo $possibleFit['fittingid']; ?>><?php echo $possibleFit['doctrine_name'] . ' - ' . $possibleFit['fitting_name']; ?></option><?php
+}
+			?>
+			                    		</select>
+			                    		<input type="submit" value="Add Shared Fit" class="btn btn-primary">
+			                    	</form>
 		                    	</div>
 								<div class="col-md-4 col-sm-12" style="text-align: center; padding-top: 10px; padding-bottom: 20px">
 									<form method="post" action="/doctrines/view/<?php echo $doctrine['doctrineid']; ?>/editdoctrine/">
@@ -688,9 +749,9 @@ if($request['action'] != 'view') {
 									<a href="/doctrines/delete/<?php echo $doctrine['doctrineid']; ?>" class="btn btn-danger eve-text" style="text-align: center; font-size: 125%">Delete Doctrine</a>
 		                    	</div>
 	                    	</div>
-	                    	<?php 
-                    	} else {
-                    		?>
+	                    	<?php
+} else {
+			?>
 							<div class="row">
 								<div class="col-md-offset-3 col-md-6" style="text-align: center; padding-top: 10px; padding-bottom: 20px">
 									<a href="/doctrines/view/<?php echo $doctrine['doctrineid']; ?>/editmode/" class="btn btn-primary eve-text" style="text-align: center; font-size: 125%">
@@ -699,9 +760,9 @@ if($request['action'] != 'view') {
 			                    </div>
 			                </div>
                     		<?php
-                    	}
-                    } 
-                    ?>
+}
+	}
+	?>
 				</div>
 				<div>
 					<div class="col-md-12">
@@ -721,29 +782,47 @@ if($request['action'] != 'view') {
 												<th style="text-align: center"></th>
 											</tr>
 											<?php
-											if(count($fittings['mainline']) >= 1) {
-												foreach($fittings['mainline'] as $fitting) {
-													if($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
-														$prereq_color = 'class="opaque-warning"';
-													} elseif($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
-														$prereq_color = 'class="opaque-danger"';
-													} else {
-														$prereq_color = 'class="opaque-success"';
-													}
-													?>
+if (count($fittings['mainline']) >= 1) {
+		foreach ($fittings['mainline'] as $fitting) {
+			if ($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
+				$prereq_color = 'class="opaque-warning"';
+			} elseif ($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
+				$prereq_color = 'class="opaque-danger"';
+			} else {
+				$prereq_color = 'class="opaque-success"';
+			}
+			switch ($fitting['fitting_priority']):
+		case 5:
+			$fittingPriority = 'Highest';
+			break;
+		case 4:
+			$fittingPriority = 'High';
+			break;
+		case 3:
+			$fittingPriority = 'Normal';
+			break;
+		case 2:
+			$fittingPriority = 'Low';
+			break;
+		case 1:
+			$fittingPriority = 'Lowest';
+			break;
+			endswitch;
+
+			?>
 													<tr <?php echo $prereq_color; ?>>
-														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship'];?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
-														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']);?></td>
-														<td style="text-align: center"><?php echo $fitting['fitting_priority'];?></td>
+														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
+														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']); ?></td>
+														<td style="text-align: center"><?php echo $fittingPriority; ?></td>
 														<td style="text-align: center; font-style: italic"><?php echo number_format($fitting['fitting_value']); ?> ISK</td>
 														<td style="text-align: center">
 															<button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#viewFitting<?php echo $fitting['fittingid']; ?>" style="float:right; margin-left: 5px; margin-right: 5px">View Fitting</button>
 														</td>
 													</tr>
 												<?php
-												}
-											}
-											?>
+}
+	}
+	?>
 										</tbody>
 									</table>
 								</div>
@@ -763,29 +842,46 @@ if($request['action'] != 'view') {
 												<th style="text-align: center"></th>
 											</tr>
 											<?php
-											if(count($fittings['logistics']) >= 1) {
-												foreach($fittings['logistics'] as $fitting) {
-													if($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
-														$prereq_color = 'class="opaque-warning"';
-													} elseif($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
-														$prereq_color = 'class="opaque-danger"';
-													} else {
-														$prereq_color = 'class="opaque-success"';
-													}
-													?>
+if (count($fittings['logistics']) >= 1) {
+		foreach ($fittings['logistics'] as $fitting) {
+			if ($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
+				$prereq_color = 'class="opaque-warning"';
+			} elseif ($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
+				$prereq_color = 'class="opaque-danger"';
+			} else {
+				$prereq_color = 'class="opaque-success"';
+			}
+			switch ($fitting['fitting_priority']):
+		case 5:
+			$fittingPriority = 'Highest';
+			break;
+		case 4:
+			$fittingPriority = 'High';
+			break;
+		case 3:
+			$fittingPriority = 'Normal';
+			break;
+		case 2:
+			$fittingPriority = 'Low';
+			break;
+		case 1:
+			$fittingPriority = 'Lowest';
+			break;
+			endswitch;
+			?>
 													<tr <?php echo $prereq_color; ?>>
-														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship'];?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
-														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']);?></td>
-														<td style="text-align: center"><?php echo $fitting['fitting_priority'];?></td>
+														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
+														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']); ?></td>
+														<td style="text-align: center"><?php echo $fittingPriority; ?></td>
 														<td style="text-align: center; font-style: italic"><?php echo number_format($fitting['fitting_value']); ?> ISK</td>
 														<td style="text-align: center">
 															<button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#viewFitting<?php echo $fitting['fittingid']; ?>" style="float:right; margin-left: 5px; margin-right: 5px">View Fitting</button>
 														</td>
 													</tr>
 												<?php
-												}
-											}
-											?>
+}
+	}
+	?>
 										</tbody>
 									</table>
 								</div>
@@ -808,29 +904,46 @@ if($request['action'] != 'view') {
 											</tr>
 											<?php
 
-											if(count($fittings['dps']) >= 1) {
-												foreach($fittings['dps'] as $fitting) {
-													if($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
-														$prereq_color = 'class="opaque-warning"';
-													} elseif($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
-														$prereq_color = 'class="opaque-danger"';
-													} else {
-														$prereq_color = 'class="opaque-success"';
-													}
-													?>
+	if (count($fittings['dps']) >= 1) {
+		foreach ($fittings['dps'] as $fitting) {
+			if ($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
+				$prereq_color = 'class="opaque-warning"';
+			} elseif ($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
+				$prereq_color = 'class="opaque-danger"';
+			} else {
+				$prereq_color = 'class="opaque-success"';
+			}
+			switch ($fitting['fitting_priority']):
+		case 5:
+			$fittingPriority = 'Highest';
+			break;
+		case 4:
+			$fittingPriority = 'High';
+			break;
+		case 3:
+			$fittingPriority = 'Normal';
+			break;
+		case 2:
+			$fittingPriority = 'Low';
+			break;
+		case 1:
+			$fittingPriority = 'Lowest';
+			break;
+			endswitch;
+			?>
 													<tr <?php echo $prereq_color; ?>>
-														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship'];?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
-														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']);?></td>
-														<td style="text-align: center"><?php echo $fitting['fitting_priority'];?></td>
+														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
+														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']); ?></td>
+														<td style="text-align: center"><?php echo $fittingPriority; ?></td>
 														<td style="text-align: center; font-style: italic"><?php echo number_format($fitting['fitting_value']); ?> ISK</td>
 														<td style="text-align: center">
 															<button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#viewFitting<?php echo $fitting['fittingid']; ?>" style="float:right; margin-left: 5px; margin-right: 5px">View Fitting</button>
 														</td>
 													</tr>
 												<?php
-												}
-											}
-											?>
+}
+	}
+	?>
 										</tbody>
 									</table>
 								</div>
@@ -851,30 +964,46 @@ if($request['action'] != 'view') {
 											</tr>
 											<?php
 
-
-											if(count($fittings['other']) >= 1) {
-												foreach($fittings['other'] as $fitting) {
-													if($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
-														$prereq_color = 'class="opaque-warning"';
-													} elseif($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
-														$prereq_color = 'class="opaque-danger"';
-													} else {
-														$prereq_color = 'class="opaque-success"';
-													}
-													?>
+	if (count($fittings['other']) >= 1) {
+		foreach ($fittings['other'] as $fitting) {
+			if ($fitting_prerequsites[$fitting['fittingid']]['warning'] >= 1) {
+				$prereq_color = 'class="opaque-warning"';
+			} elseif ($fitting_prerequsites[$fitting['fittingid']]['danger'] >= 1) {
+				$prereq_color = 'class="opaque-danger"';
+			} else {
+				$prereq_color = 'class="opaque-success"';
+			}
+			switch ($fitting['fitting_priority']):
+		case 5:
+			$fittingPriority = 'Highest';
+			break;
+		case 4:
+			$fittingPriority = 'High';
+			break;
+		case 3:
+			$fittingPriority = 'Normal';
+			break;
+		case 2:
+			$fittingPriority = 'Low';
+			break;
+		case 1:
+			$fittingPriority = 'Lowest';
+			break;
+			endswitch;
+			?>
 													<tr <?php echo $prereq_color; ?>>
-														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship'];?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
-														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']);?></td>
-														<td style="text-align: center"><?php echo $fitting['fitting_priority'];?></td>
+														<td><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"><?php echo $fitting['fitting_name']; ?></td>
+														<td style="text-align: center"><?php echo $eve->getTypeName($fitting['fitting_ship']); ?></td>
+														<td style="text-align: center"><?php echo $fittingPriority; ?></td>
 														<td style="text-align: center; font-style: italic"><?php echo number_format($fitting['fitting_value']); ?> ISK</td>
 														<td style="text-align: center">
 															<button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#viewFitting<?php echo $fitting['fittingid']; ?>" style="float:right; margin-left: 5px; margin-right: 5px">View Fitting</button>
 														</td>
 													</tr>
 												<?php
-												}
-											}
-											?>
+}
+	}
+	?>
 										</tbody>
 									</table>
 								</div>
@@ -887,4 +1016,4 @@ if($request['action'] != 'view') {
 	</div>
 	<?php
 }
-require_once('includes/footer.php');
+require_once 'includes/footer.php';

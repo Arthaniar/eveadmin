@@ -248,10 +248,16 @@ class Character {
 	        	}
 
 	        	// Checking to see if the character has been podded, or if they're in a capsule/ship
-	        	if($this->currentShipTypeID == 0 ) {
+	        	if($this->currentShipTypeID == 0 OR strpos($phealCharacterInfo->shipTypeName, 'Station') !== FALSE OR strpos($phealCharacterInfo->shipTypeName, 'Outpost') !== FALSE ) {
 	        		$this->currentShipTypeName = 'Out Of Capsule';
+	        		$this->currentShipTypeID = 0;
 	        	} else {
 	        		$this->currentShipTypeName = $phealCharacterInfo->shipTypeName;
+	        	}
+
+	        	if($this->characterName == "Wes Balogh") {
+	        		//var_dump($phealCharacterInfo);
+	        		//die;
 	        	}
 
 				$stmt = $this->db->prepare('INSERT INTO characters (charid,uid,gid,userid,showchar,charactername,corporation,corpid,corporation_ticker,alliance,allyid,skillid,trainlevel,endtraining,endqueue,numqueue,'.
@@ -308,9 +314,10 @@ class Character {
 				$skillID = $skill->typeID;
 				$skillLevel = $skill->level;
 
+
 				$stmtnew->execute(array($skill->typeID));
 				$skillInfo = $stmtnew->fetchAll(PDO::FETCH_ASSOC);
-				
+
 				if ($skillInfo[0]['typeName'] === NULL) {
 					$failure = "SDE Failure";
 				} else {
@@ -377,6 +384,9 @@ class Character {
 		$stmt->execute(array($characterID));
 
 		$stmt = $db->prepare('DELETE FROM doctrines_tracking WHERE charid = ?');
+		$stmt->execute(array($characterID));
+
+		$stmt = $db->prepare('DELETE FROM user_character_group_assignment WHERE character_id = ?');
 		$stmt->execute(array($characterID));
 	}
 

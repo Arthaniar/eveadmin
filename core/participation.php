@@ -19,6 +19,13 @@ $stmt = $db->prepare('SELECT uid,username FROM user_accounts WHERE gid = ? AND a
 $stmt->execute(array($user->getGroup()));
 $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+$stmt_participation = $db->prepare('SELECT user_accounts.username,user_accounts.uid,user_participation.participation_metric FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_accounts.access != "No Access" AND user_accounts.access != "New Applicant" AND user_participation.time_period = ? AND user_participation.participation_metric != 0 ORDER BY user_accounts.username ASC');
+$stmt_participation->execute(array($user->getGroup(), $time_period));
+$participation = $stmt_participation->fetchAll(PDO::FETCH_ASSOC);
+
+$stmt_total_members = $db->prepare('SELECT uid FROM user_accounts WHERE gid = ? AND access != "No Access" AND access != "New Applicant"');
+$stmt_total_members->execute(array($user->getGroup()));
+$total_members = $stmt_total_members->rowCount();
 ?>
 <div class="opaque-container">
 
@@ -32,7 +39,7 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				<div class="col-md-3 col-sm-6" style="text-align: center; margin-bottom; 15px">
 					<h3 class="eve-text">Total Participation Numbers</h3>
 						<?php
-						$stmt = $db->prepare('SELECT sum(user_participation.participation_metric) FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ?');
+						$stmt = $db->prepare('SELECT sum(user_participation.participation_metric) FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_accounts.access != "No Access" AND user_accounts.access != "New Applicant" AND user_participation.time_period = ?');
 						$stmt->execute(array($user->getGroup(), $time_period));
 						$participation_sum = $stmt->fetch();
 
@@ -49,15 +56,9 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				<div class="col-md-3 col-sm-6" style="text-align: center; margin-bottom; 15px">
 					<h3 class="eve-text">Human Participation</h3>
 						<?php
-						$stmt = $db->prepare('SELECT user_accounts.uid FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ?');
-						$stmt->execute(array($user->getGroup(), $time_period));
-						$participation_humans = $stmt->rowCount();
+						$participation_humans = $stmt_participation->rowCount();
 
-						$stmt_humans = $db->prepare('SELECT uid FROM user_accounts WHERE gid = ?');
-						$stmt_humans->execute(array($user->getGroup()));
-						$total_humans = $stmt_humans->rowCount();
-
-						$participation_difference = $participation_humans / $total_humans;
+						$participation_difference = $participation_humans / $total_members;
 						$participation_percentage = round((float)$participation_difference * 100 ) . '%';
 
 						if($participation_difference < "0.4") {
@@ -73,13 +74,14 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 				<div class="col-md-3 col-sm-6" style="text-align: center; margin-bottom; 15px">
 					<h3 class="eve-text">5 Link Minimum Requirement</h3>
 						<?php
-						$stmt = $db->prepare('SELECT user_accounts.uid FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_participation.time_period = ? AND user_participation.participation_metric >= "5"');
-						$stmt->execute(array($user->getGroup(), $time_period));
-						$participation_humans = $stmt->rowCount();
+						$stmt_minimum_participation = $db->prepare('SELECT user_accounts.uid FROM user_participation JOIN user_accounts ON user_accounts.uid = user_participation.uid WHERE user_accounts.gid = ? AND user_accounts.access != "No Access" AND user_accounts.access != "New Applicant" AND user_participation.time_period = ? AND user_participation.participation_metric >= "5"');
+						$stmt_minimum_participation->execute(array($user->getGroup(), $time_period));
+						$participation_humans_meeting_minimum = $stmt_minimum_participation->rowCount();
 
-						$participation_difference = $participation_humans / $total_humans;
+						$participation_human_count = $stmt_participation->rowCount();
+
+						$participation_difference = $participation_humans_meeting_minimum / $total_members;
 						$participation_percentage = round((float)$participation_difference * 100 ) . '%';
-
 						if($participation_difference < "0.4") {
 							$sum_color = 'danger';
 						} elseif($participation_difference > "0.7") {
@@ -94,7 +96,7 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 					<h3 class="eve-text">Total Humans</h3>
 						<?php
 
-						if($total_humans < 10) {
+						if($total_members < 10) {
 							$sum_color = 'danger';
 						} elseif($participation_difference > 20) {
 							$sum_color = 'success';
@@ -102,7 +104,7 @@ $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 							$sum_color = 'warning';
 						}
 						?>
-						<span class="label label-<?php echo $sum_color; ?>" style="font-size: 200%"><?php echo $total_humans; ?> Total Humans</span>
+						<span class="label label-<?php echo $sum_color; ?>" style="font-size: 200%"><?php echo $total_members; ?> Total Humans</span>
 				</div>
 			</div>
 			<div class="row" style="padding-left: 10px; padding-right: 10px">

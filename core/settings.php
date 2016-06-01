@@ -44,6 +44,8 @@ if($request['action'] == 'group' AND $user->getCEOAccess()) {
 } elseif($request['action'] == 'account' OR ($request['action'] == 'group' AND !$user->getCEOAccess())) {
 	$settings_type = 'Account';
 }
+
+$settings = new Settings($db, $user->getGroup());
 ?>
 <div class="opaque-container">
 

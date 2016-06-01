@@ -176,7 +176,7 @@ require_once('includes/header.php');
 				                          <?php echo number_format($character->getAccountBalance()).' ISK'; ?>
 				                        </li>
 				                        <li>
-				                          <span>Location: <?php echo $character->getLastKnownLocation(); ?></span>
+				                          <span>Location: <?php $system = explode(" ", $character->getLastKnownLocation()); echo $system[0]; ?></span>
 				                        </li>
 				                        <li>
 				                        <span>Flying: <?php echo $character->getActiveShipName(); ?></span>
@@ -453,7 +453,7 @@ require_once('includes/header.php');
 																			?>
 																			<tr <?php echo $colorClass; ?>>
 																				<td <?php echo $iconClass; ?>></td>
-																				<td style="text-align: center;"><a href="group.php?page=plans&view=<?php echo $skill['charid'];?>" style="color: #f5f5f5"><?php echo $skill['character_name']; ?></a></td>
+																				<td style="text-align: center;"><a href="/skillplans/<?php echo $skill['charid'];?>/" style="color: #f5f5f5" target="blank"><?php echo $skill['character_name']; ?></a></td>
 																				<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_trained']; ?></td>
 																				<td style="text-align: center; color: #f5f5f5"><?php echo $skill['skills_total']; ?></td>
 																			</tr>

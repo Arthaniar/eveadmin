@@ -1,12 +1,12 @@
 <?php
-require_once('includes/header.php');
+require_once 'includes/header.php';
 
-$stmt = $db->prepare('SELECT * FROM doctrines WHERE gid = 1 ORDER BY FIELD(doctrine_use, "Strategic Doctrine", "Mid-Tier Doctrine", "Skirmish Doctrine")');
+$stmt = $db->prepare('SELECT * FROM doctrines WHERE gid = 1 AND doctrine_name != "Standard LAWN Support Fits" ORDER BY FIELD(doctrine_use, "Strategic Doctrine", "Mid-Tier Doctrine", "Skirmish Doctrine")');
 $stmt->execute(array());
 $doctrines = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Getting the contracts from our Database
-$stmt = $db->prepare('SELECT * FROM alliance_contracts WHERE end_date >= ? ORDER BY doctrine,ship,price,end_date ASC');
+$stmt = $db->prepare('SELECT * FROM alliance_contracts WHERE end_date >= ? ORDER BY fittingid,price,end_date ASC');
 $stmt->execute(array(time()));
 $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -25,15 +25,15 @@ $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <?php
-foreach($doctrines as $doctrine) {
-	$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE doctrineid = ? ORDER BY FIELD(fitting_role, "Mainline", "Logistics", "DPS", "Tackle", "Specialty"), fitting_priority DESC');
-	$stmt->execute(array($doctrine['doctrineid']));
-	$fittings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+foreach ($doctrines as $doctrine) {
+    $stmt = $db->prepare('SELECT doctrines_fits.*,doctrines_shared_fittings.alternate_doctrine_id FROM doctrines_fits LEFT JOIN doctrines_shared_fittings ON doctrines_fits.fittingid = doctrines_shared_fittings.fittingid WHERE doctrineid = ? OR alternate_doctrine_id = ? ORDER BY FIELD(fitting_role, "Mainline", "Logistics", "DPS", "Tackle", "Specialty"), fitting_priority DESC');
+    $stmt->execute(array($doctrine['doctrineid'], $doctrine['doctrineid']));
+    $fittings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-	// Getting the contracts from our Database
-	$stmt_contracts = $db->prepare('SELECT * FROM alliance_contracts WHERE end_date >= ? AND doctrine = ? AND ship = ? ORDER BY price,end_date ASC');
+    // Getting the contracts from our Database
+    $stmt_contracts = $db->prepare('SELECT * FROM alliance_contracts WHERE end_date >= ? AND fittingid = ? ORDER BY price,end_date ASC');
 
-	?>
+    ?>
 	<div class="opaque-container panel-group" id="<?php echo $doctrine['doctrineid']; ?>" role="tablist" aria-multiselectable="true">
 		<div class="row">
 			<div class="col-md-12 opaque-section" style="margin-bottom: 15px">
@@ -44,17 +44,21 @@ foreach($doctrines as $doctrine) {
 				</div>
 				<div id="collapsedoctrine<?php echo $doctrine['doctrineid']; ?>" class="panel-collapse collapse" role="tabpanel" aria-labelledby="doctrine<?php echo $doctrine['doctrineid']; ?>Heading">
 					<?php
-					$i = 1;
+$i = 1;
 
-					$fittingsCount = count($fittings);
+    $fittingsCount = count($fittings);
 
-					if($fittingsCount >= 1) {
+    if ($fittingsCount >= 1) {
 
-						foreach($fittings as $fitting) {
-							if($i % 2 == 1) {
-								?><div class="row"><?php
-							}
-							?>
+        foreach ($fittings as $fitting) {
+            // Getting all equivalent fittings
+            $stmt_equivalent_fittings = $db->prepare('SELECT fitting_id_1,fitting_id_2 FROM doctrines_identical_fits WHERE fitting_id_1 = ? OR fitting_id_2 = ?');
+            $stmt_equivalent_fittings->execute(array($fitting['fittingid'], $fitting['fittingid']));
+            $equivalentFits = $stmt_equivalent_fittings->fetchAll(PDO::FETCH_ASSOC);
+            if ($i % 2 == 1) {
+                ?><div class="row"><?php
+}
+            ?>
 							<!-- Beginning of Modal Window -->
 							<div class="modal fade" id="fitting<?php echo $fitting['fittingid']; ?>Modal" tabindex="-1" role="dialog" aria-labelledby="fittingLabel<?php echo $fitting['fittingid']; ?>Modal" aria-hidden="true" >
 								<div class="modal-dialog">
@@ -64,120 +68,120 @@ foreach($doctrines as $doctrine) {
 					                  			<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 					                  				<span aria-hidden="true">&times;</span>
 					                  			</button>
-					                  			<h4 class="modal-title" id="fittingLabel<?php echo $fitting['fittingid']; ?>Modal"><?php echo $doctrine['doctrine_name'].' - '.$fitting['fitting_name']; ?> EFT Fitting Block</h4>
+					                  			<h4 class="modal-title" id="fittingLabel<?php echo $fitting['fittingid']; ?>Modal"><?php echo $doctrine['doctrine_name'] . ' - ' . $fitting['fitting_name']; ?> EFT Fitting Block</h4>
 					                		</div>
 					                		<!-- Modal Body -->
 					                		<?php
-					                		$stmt = $db->prepare('SELECT type_id,module_quantity FROM doctrines_fittingmods WHERE fittingid = ? AND module_slot = ?');
+$stmt = $db->prepare('SELECT type_id,module_quantity FROM doctrines_fittingmods WHERE fittingid = ? AND module_slot = ?');
 
-					                		// Getting the low slots
-					                		$stmt->execute(array($fitting['fittingid'], 'Low'));
-					                		$low_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Getting the low slots
+            $stmt->execute(array($fitting['fittingid'], 'Low'));
+            $low_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					                		// Getting the mid slots
-					                		$stmt->execute(array($fitting['fittingid'], 'Mid'));
-					                		$mid_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Getting the mid slots
+            $stmt->execute(array($fitting['fittingid'], 'Mid'));
+            $mid_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					                		// Getting the high slots
-					                		$stmt->execute(array($fitting['fittingid'], 'High'));
-					                		$high_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Getting the high slots
+            $stmt->execute(array($fitting['fittingid'], 'High'));
+            $high_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					                		// Getting the rigs
-					                		$stmt->execute(array($fitting['fittingid'], 'Rig'));
-					                		$rig_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Getting the rigs
+            $stmt->execute(array($fitting['fittingid'], 'Rig'));
+            $rig_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					                		// Getting the subsystems (if present)
-					                		$stmt->execute(array($fitting['fittingid'], 'Subsystem'));
-					                		$subsystem_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            // Getting the subsystems (if present)
+            $stmt->execute(array($fitting['fittingid'], 'Subsystem'));
+            $subsystem_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-					                		// Getting the drones and cargo
-					                		$stmt->execute(array($fitting['fittingid'], 'Drone'));
-					                		$drone_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
-					                		?>
+            // Getting the drones and cargo
+            $stmt->execute(array($fitting['fittingid'], 'Drone'));
+            $drone_slot = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            ?>
 					                		<div class="modal-body">
 					                		<p>This is a standard EFT formatted out-of-game fitting. This can be used with EFT, Pyfa, EveAdmin, and the in-game Fitting Import function.</p>
 					                		<p>
-					                			[<?php echo $eve->getTypeName($fitting['fitting_ship']).', '.$fitting['fitting_name']; ?>]<br>
+					                			[<?php echo $eve->getTypeName($fitting['fitting_ship']) . ', ' . $fitting['fitting_name']; ?>]<br>
 					                			<?php
-					                			foreach($low_slot as $module) {
-					                				if($module['module_quantity'] > 1) {
-					                					$module_i = 1;
-					                					while($module_i <= $module['module_quantity']) {
-					                						?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
-					                						$module_i++;
-					                					}
-					                				} else {
-					                					?><span><?php echo $eve->getTypeName($module['type_id']);?></span><br><?php
-					                				
-					                				}
-					                			}
-					                			echo "<br>";
-			
-					                			foreach($mid_slot as $module) {
-					                				if($module['module_quantity'] > 1) {
-					                					$module_i = 1;
-					                					while($module_i <= $module['module_quantity']) {
-					                						?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
-					                						$module_i++;
-					                					}
-					                				} else {
-					                					?><span><?php echo $eve->getTypeName($module['type_id']);?></span><br><?php
-					                				
-					                				}
-					                			}
-					                			echo "<br>";
-			
-					                			foreach($high_slot as $module) {
-					                				if($module['module_quantity'] > 1) {
-					                					$module_i = 1;
-					                					while($module_i <= $module['module_quantity']) {
-					                						?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
-					                						$module_i++;
-					                					}
-					                				} else {
-					                					?><span><?php echo $eve->getTypeName($module['type_id']);?></span><br><?php
-					                				
-					                				}
-					                			}
-					                			echo "<br>";
-			
-					                			foreach($rig_slot as $module) {
-					                				if($module['module_quantity'] > 1) {
-					                					$module_i = 1;
-					                					while($module_i <= $module['module_quantity']) {
-					                						?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
-					                						$module_i++;
-					                					}
-					                				} else {
-					                					?><span><?php echo $eve->getTypeName($module['type_id']);?></span><br><?php
-					                				
-					                				}
-					                			}
-					                			echo "<br>";
-			
-					                			if(count($subsystem_slot) >= 1) {
-					                				foreach($subsystem_slot as $module) {
-					                					if($module['module_quantity'] > 1) {
-					                						$module_i = 1;
-					                						while($module_i <= $module['module_quantity']) {
-					                							?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
-					                							$module_i++;
-					                						}
-					                					} else {
-					                						?><span><?php echo $eve->getTypeName($module['type_id']);?></span><br><?php
-					                					
-					                					}
-					                				}
-					                				echo "<br>";
-					                			}
-			
-					                			if(count($drone_slot) >= 1) {
-					                				foreach($drone_slot as $module) {
-					                					?><span><?php echo $eve->getTypeName($module['type_id']).' x'.$module['module_quantity'];?></span><br><?php
-					                				}
-					                				echo "<br>";
-					                			}
-					                			?>
+foreach ($low_slot as $module) {
+                if ($module['module_quantity'] > 1) {
+                    $module_i = 1;
+                    while ($module_i <= $module['module_quantity']) {
+                        ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+$module_i++;
+                    }
+                } else {
+                    ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+
+                }
+            }
+            echo "<br>";
+
+            foreach ($mid_slot as $module) {
+                if ($module['module_quantity'] > 1) {
+                    $module_i = 1;
+                    while ($module_i <= $module['module_quantity']) {
+                        ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+$module_i++;
+                    }
+                } else {
+                    ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+
+                }
+            }
+            echo "<br>";
+
+            foreach ($high_slot as $module) {
+                if ($module['module_quantity'] > 1) {
+                    $module_i = 1;
+                    while ($module_i <= $module['module_quantity']) {
+                        ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+$module_i++;
+                    }
+                } else {
+                    ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+
+                }
+            }
+            echo "<br>";
+
+            foreach ($rig_slot as $module) {
+                if ($module['module_quantity'] > 1) {
+                    $module_i = 1;
+                    while ($module_i <= $module['module_quantity']) {
+                        ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+$module_i++;
+                    }
+                } else {
+                    ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+
+                }
+            }
+            echo "<br>";
+
+            if (count($subsystem_slot) >= 1) {
+                foreach ($subsystem_slot as $module) {
+                    if ($module['module_quantity'] > 1) {
+                        $module_i = 1;
+                        while ($module_i <= $module['module_quantity']) {
+                            ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+$module_i++;
+                        }
+                    } else {
+                        ?><span><?php echo $eve->getTypeName($module['type_id']); ?></span><br><?php
+
+                    }
+                }
+                echo "<br>";
+            }
+
+            if (count($drone_slot) >= 1) {
+                foreach ($drone_slot as $module) {
+                    ?><span><?php echo $eve->getTypeName($module['type_id']) . ' x' . $module['module_quantity']; ?></span><br><?php
+}
+                echo "<br>";
+            }
+            ?>
 						                		</p>
 					                        </div>
 					                        <!-- Modal Footer -->
@@ -186,20 +190,35 @@ foreach($doctrines as $doctrine) {
 					                		</div>
 					              		</div>
 					           	</div>
-					        </div> 
+					        </div>
 					        <!-- End of Modal Window -->
 					        <?php
-							$stmt_contracts->execute(array(time(), $doctrine['doctrine_name'], $fitting['fitting_name']));
-							$contracts = $stmt_contracts->fetchAll(PDO::FETCH_ASSOC);
-							?>
+$stmt_contracts->execute(array(time(), $fitting['fittingid']));
+            $contracts = $stmt_contracts->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($equivalentFits as $equivalent) {
+                if ($equivalent['fitting_id_1'] != $fitting['fittingid']) {
+                    $stmt_contracts->execute(array(time(), $equivalent['fitting_id_1']));
+                    $equivalentContractsArray = $stmt_contracts->fetchAll(PDO::FETCH_ASSOC);
+                } elseif ($equivalent['fitting_id_2'] != $fitting['fittingid']) {
+                    $stmt_contracts->execute(array(time(), $equivalent['fitting_id_2']));
+                    $equivalentContractsArray = $stmt_contracts->fetchAll(PDO::FETCH_ASSOC);
+
+                }
+
+                $contracts = array_merge($contracts, $equivalentContractsArray);
+            }
+            ?>
 							<div class="col-md-6 col-sm-12" style="margin-bottom: 15px; padding-left: 0px; padding-right: 0px">
 								<div class="opaque-section" style="margin-left: 10px; margin-right: 10px; background-image: none">
 									<div class="row box-title-section">
-										<h2 style="text-align: center"><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"><?php echo $fitting['fitting_name']; ?><?php if($user->getLoginStatus()) { echo '<button style="margin-left: 5px" class="btn btn-sm btn-success">Usable!</button>'; } ?></h2>
+										<h2 style="text-align: center"><img style="margin-right: 5px" src="https://image.eveonline.com/InventoryType/<?php echo $fitting['fitting_ship']; ?>_32.png"><?php echo $fitting['fitting_name']; ?><?php if ($user->getLoginStatus()) {echo '<button style="margin-left: 5px" class="btn btn-sm btn-success">Usable!</button>';}
+            ?></h2>
 									</div>
 									<div class="row">
 										<table class="table table-striped">
-<!--
+
+                                        <?php if ($user->getUserAccess()) {?>
 											<tr>
 												<th style="text-align: center">Role</th>
 												<th class="hidden-column" style="text-align: center">Priority</th>
@@ -211,7 +230,8 @@ foreach($doctrines as $doctrine) {
 												<td class="hidden-column"><?php echo $fitting['fitting_priority']; ?></td>
 												<td><?php echo number_format($fitting['fitting_value']); ?></td>
 												<td><button class="btn btn-sm btn-primary" style="margin-right: 2px" data-toggle="modal" data-target="#fitting<?php echo $fitting['fittingid']; ?>Modal">EFT Block</button><button class="btn btn-sm btn-primary">In Game Fitting</button></td>
-											</tr>-->
+											</tr>
+                                            <?php } // End of login-only section ?>
 											<tr>
 												<th style="text-align: center">Contractor</th>
 												<th class="hidden-column" style="text-align: center">Location</th>
@@ -219,129 +239,134 @@ foreach($doctrines as $doctrine) {
 												<th style="text-align: center">Info</th>
 											</tr>
 											<?php
-											if(count($contracts) >= 1) {
-												foreach($contracts as $contract) {
+if (count($contracts) >= 1) {
+                foreach ($contracts as $contract) {
 
-													$price_color = "#f5f5f5";
-													$fitting_name = '---';
-													$fitting_verification = '---';
-													$doctrine_name = '<span class="label label-danger" style="font-size: 85%">Unknown Doctrine</label>';
+                    $price_color = "#f5f5f5";
+                    $fitting_name = '---';
+                    $fitting_verification = '---';
+                    $doctrine_name = '<span class="label label-danger" style="font-size: 85%">Unknown Doctrine</label>';
 
-													if($contract['doctrine'] != 'Unknown') {
-														$stmt = $db->prepare('SELECT * FROM doctrines WHERE doctrine_name = ? LIMIT 1');
-														$stmt->execute(array($contract['doctrine']));
-														$doctrine = $stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($contract['fittingid'] != '0') {
+                        $stmt = $db->prepare('SELECT * FROM doctrines_fits JOIN doctrines ON doctrines_fits.doctrineid = doctrines.doctrineid WHERE doctrines_fits.fittingid = ? LIMIT 1');
+                        $stmt->execute(array($contract['fittingid']));
+                        $doctrine = $stmt->fetch(PDO::FETCH_ASSOC);
 
-														if(isset($doctrine['doctrine_name'])) {
-															$ship_id = $eve->getTypeID($contract['ship']);
+                        if (isset($doctrine['doctrineid'])) {
 
-															if($ship_id != NULL) {
-																$doctrine_id = $doctrine['doctrineid'];
-																$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE fitting_ship = ? AND doctrineid = ? LIMIT 1');
+                            if (isset($doctrine['fittingid'])) {
+                                $stmt = $db->prepare('SELECT * FROM doctrines_fittingmods WHERE fittingid = ?');
+                                $stmt->execute(array($doctrine['fittingid']));
+                                $fitting_mods = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-																$stmt->execute(array($ship_id, $doctrine_id));
-																$ship = $stmt->fetch(PDO::FETCH_ASSOC);
+                                $fitting_value = $doctrine['fitting_value'];
+				if($fitting_value == 0) {
+					$price_percentage = 'Unknown';
+				} else {
+	                                $price_percentage = number_format(($contract['price'] / $fitting_value) * 100);
+				}
+				
+                                if ($contract['price'] > ($fitting_value * 1.50)) {
+                                    $price_color = 'red';
+                                    $price_tooltip = 'Markup of ' . $price_percentage . '%';
+                                } elseif ($price_percentage = 'Unknown ') {
+				    $price_color = '#f5f5f5';
+				    $price_tooltip = 'Unknown markup';
+				} else {
+                                    $price_color = '#01b43a';
+                                    $price_tooltip = 'Markup of ' . $price_percentage . '%';
+                                }
 
-																if(isset($ship['fitting_name'])) {
-																	$stmt = $db->prepare('SELECT * FROM doctrines_fittingmods WHERE fittingid = ?');
-																	$stmt->execute(array($ship['fittingid']));
-																	$fitting_mods = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                $fitting_failures = 0;
+                                $fitting_warnings = 0;
+                                $fitting_prop_warnings = 0;
+                                $fitting_tooltip = array();
 
-																	$fitting_value = $ship['fitting_value'];
+                                foreach ($fitting_mods as $mod) {
+                                    $stmt = $db->prepare('SELECT * FROM alliance_contract_items WHERE contractID = ? AND itemID = ?');
+                                    $stmt->execute(array($contract['contractID'], $mod['type_id']));
+                                    $item_lookup = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-																	$price_percentage = number_format(($contract['price']/$fitting_value)*100);
+                                    $contract_quantity = 0;
+                                    if ($stmt->rowCount() >= 1) {
+                                        foreach ($item_lookup as $contract_item) {
+                                            $contract_quantity += $contract_item['quantity'];
+                                        }
+                                    }
 
-																	if($contract['price'] > ($fitting_value*1.50)) {
-																		$price_color = 'red';
-																		$price_tooltip = 'Markup of '.$price_percentage.'%';
-																	} else {
-																		$price_color = '#01b43a';
-																		$price_tooltip = 'Markup of '.$price_percentage.'%';
-																	}
+                                    if ($contract_quantity < $mod['module_quantity']) {
 
-																	$fitting_failures = 0;
-																	$fitting_warnings = 0;
-																	$fitting_tooltip = array();
+                                        if (strpos($eve->getTypeName($mod['type_id']), 'True Sansha') !== false) {
+                                            $armor_alternatives = ["Ammatar Navy",
+                                                "Dark Blood",
+                                                "Federation Navy",
+                                                "Imperial Navy",
+                                                "Khanid Navy",
+                                                "Shadow Serpentis",
+                                                "True Sansha"];
+                                            foreach ($armor_alternatives as $alt) {
+                                                $stmt->execute(array($contract['contractID'], $eve->getTypeID(str_replace("True Sansha", $alt, $eve->getTypeName($mod['type_id'])))));
+                                                $alt_item_lookup = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-																	foreach($fitting_mods as $mod) {
-																		$stmt = $db->prepare('SELECT * FROM alliance_contract_items WHERE contractID = ? AND itemID = ?');
-																		$stmt->execute(array($contract['contractID'], $mod['type_id']));
-																		$item_lookup = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                                if ($stmt->rowCount() >= 1) {
+                                                    foreach ($alt_item_lookup as $contract_item) {
+                                                        $contract_quantity += $contract_item['quantity'];
+                                                    }
+                                                }
+                                            }
 
-																		$contract_quantity = 0;
-																		if($stmt->rowCount() >= 1) {
-																			foreach($item_lookup as $contract_item) {
-																				$contract_quantity += $contract_item['quantity'];
-																			}
-																		}
+                                            if ($contract_quantity < $mod['module_quantity']) {
+                                                $fitting_failures++;
+                                                $difference = $mod['module_quantity'] - $contract_quantity;
+                                                $fitting_tooltip[] = $difference . ' ' . $eve->getTypeName($mod['type_id']);
 
-																		if($contract_quantity < $mod['module_quantity']) {
+                                            }
+                                        } elseif (strpos($eve->getTypeName($mod['type_id']), 'mn ') !== false and strpos($eve->getTypeName($mod['type_id']), 'Omni') !== true) {
+                                            $fitting_prop_warnings++;
+                                        } else {
+                                            if ($mod['module_slot'] == 'Drone') {
+                                                $fitting_warnings++;
+                                            } else {
+                                                $fitting_failures++;
+                                            }
+                                            $difference = $mod['module_quantity'] - $contract_quantity;
+                                            $fitting_tooltip[] = $difference . ' ' . $eve->getTypeName($mod['type_id']);
+                                        }
+                                    }
+                                }
 
-																			if(strpos($eve->getTypeName($mod['type_id']), 'True Sansha Armor') !== FALSE) {
-																				$armor_alternatives = ["Ammatar Navy",
-																									   "Dark Blood",
-																									   "Federation Navy",
-																									   "Imperial Navy",
-																									   "Khanid Navy",
-																									   "Shadow Serpentis"];
-																				foreach($armor_alternatives as $alt) {
-																					$stmt->execute(array($contract['contractID'], $eve->getTypeID(str_replace("True Sansha", $alt, $eve->getTypeName($mod['type_id'])))));
-																					$alt_item_lookup = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                if ($fitting_failures >= 1) {
+                                    $fitting_parsed_tooltip = implode(', ', $fitting_tooltip);
+                                    $fitting_verification = '<button class="btn btn-danger btn-sm" onclick="CCPEVE.showContract(30000226,' . $contract['contractID'] . ')" data-toggle="tooltip" data-placement="top" title="Missing: ' . $fitting_parsed_tooltip . '">Fitting Incorrect</button>';
+                                } elseif ($fitting_prop_warnings >= 1) {
+                                    $fitting_parsed_tooltip = implode(', ', $fitting_tooltip);
+                                    $fitting_verification = '<button class="btn btn-warning btn-sm" onclick="CCPEVE.showContract(30000226,' . $contract['contractID'] . ')" data-toggle="tooltip" data-placement="top" title="Missing: ' . $fitting_parsed_tooltip . '">Missing Spare MWD/AB</button>';
+                                } elseif ($fitting_warnings >= 1) {
+                                    $fitting_parsed_tooltip = implode(', ', $fitting_tooltip);
+                                    $fitting_verification = '<button class="btn btn-warning btn-sm" onclick="CCPEVE.showContract(30000226,' . $contract['contractID'] . ')" data-toggle="tooltip" data-placement="top" title="Missing: ' . $fitting_parsed_tooltip . '">Missing Some Ammo/Cargo</button>';
+                                } else {
+                                    $fitting_verification = '<button class="btn btn-success btn-sm" onclick="CCPEVE.showContract(30000226,' . $contract['contractID'] . ')">Verfied SRPable Fitting</button>';
+                                }
 
-																					if($stmt->rowCount() >= 1) {
-																						foreach($alt_item_lookup as $contract_item) {
-																							$contract_quantity += $contract_item['quantity'];
-																						}
-																					}
-																				}
-
-																				if($contract_quantity < $mod['module_quantity']) {
-																					$fitting_failures++;
-																					$difference = $mod['module_quantity'] - $contract_quantity;
-																					$fitting_tooltip[] = $difference.' '.$eve->getTypeName($mod['type_id']);
-
-																				}
-																			} else {
-																				if($mod['module_slot'] == 'Drone') {
-																					$fitting_warnings++;
-																				} else {
-																					$fitting_failures++;
-																				}
-																				$difference = $mod['module_quantity'] - $contract_quantity;
-																				$fitting_tooltip[] = $difference.' '.$eve->getTypeName($mod['type_id']);
-																			}
-																		}
-																	}
-
-																	if($fitting_failures >= 1) {
-																		$fitting_parsed_tooltip = implode(', ', $fitting_tooltip);
-																		$fitting_verification = '<button class="btn btn-danger btn-sm" onclick="CCPEVE.showContract(30000226,'.$contract['contractID'].')" data-toggle="tooltip" data-placement="top" title="Missing: '.$fitting_parsed_tooltip.'">Fitting Incorrect</button>';
-																	} elseif($fitting_warnings >= 1) {
-																		$fitting_parsed_tooltip = implode(', ', $fitting_tooltip);
-																		$fitting_verification = '<button class="btn btn-warning btn-sm" onclick="CCPEVE.showContract(30000226,'.$contract['contractID'].')" data-toggle="tooltip" data-placement="top" title="Missing: '.$fitting_parsed_tooltip.'">Missing Some Ammo/Cargo</button>';							
-																	} else {
-																		$fitting_verification = '<button class="btn btn-success btn-sm" onclick="CCPEVE.showContract(30000226,'.$contract['contractID'].')">Verfied SRPable Fitting</button>';
-																	}
-
-																}
-															}
-														}
-													}
-													?>
+                            }
+                        }
+                    }
+                    ?>
 														<tr style="text-align: center">
 															<td><?php echo $contract['issuerName']; ?></td>
-															<td class="hidden-column"><?php echo "FH-TTC"; ?></td>
-															<td style="color: <?php echo $price_color; ?>">
-																<span data-toggle="tooltip" data-placement="top" title="<?php echo $price_tooltip; ?>">
+															<td class="hidden-column"><?php echo "VSIG-K 5-8"; ?></td>
+															<!--<td style="color: <?php echo $price_color; ?>">-->
+															<td>
+																<!--<span data-toggle="tooltip" data-placement="top" title="<?php echo $price_tooltip; ?>"> --> <span>
 																	<?php echo number_format($contract['price']); ?>
 																</span>
 															</td>
 															<td><?php echo $fitting_verification; ?></td>
 														</tr>
 													<?php
-												}
-											} else {
-												?>
+}
+            } else {
+                ?>
 												<tr style="text-align: center">
 													<td>---</td>
 													<td class="hidden-column">No Contracts Available</td>
@@ -349,30 +374,30 @@ foreach($doctrines as $doctrine) {
 													<td>---</td>
 												</tr>
 												<?php
-											}
-											?>
+}
+            ?>
 										</table>
-									</div>	
+									</div>
 								</div>
 							</div>
 							<?php
-							if($i % 2 == 0 OR $i == $fittingsCount) {
-								?></div><?php
-							}
-							$i++;
-						}
-					} else {
-						?>
+if ($i % 2 == 0 or $i == $fittingsCount) {
+                ?></div><?php
+}
+            $i++;
+        }
+    } else {
+        ?>
 						<div class="row box-title-section">
 							<h2 style="text-align: center">This Doctrine does not currently have any fits.</h2>
 						</div>
 						<?php
-					}
-					?>
+}
+    ?>
 				</div>
 			</div>
 	    </div>
 	</div>
 	<?php
 }
-require_once('includes/footer.php');
+require_once 'includes/footer.php';

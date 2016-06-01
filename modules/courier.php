@@ -17,23 +17,18 @@ require_once('includes/header.php');
 				<div class="row">
 					<form method="post" action="/courier/">
 						<formfield>
+						<h2 style="text-align: center; color: red">Kibbles And Bits JF Service is currently suspended. Contracts will be rejected.</h2>
 							<label for="freighter_route">Jump Freighter Route:</label>
 							<select class="form-control" name="freighter_route" id="freighter_route">
 								<option style="background-color: rgb(24,24,24)" disabled>Select A Jump Freighter Route</option>
-								<option style="background-color: rgb(24,24,24)" disabled>Vale Of the Silent</option>
-								<option style="background-color: rgb(24,24,24)" value="200">FH-TTC <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="200">Q-EHMJ <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="200">7-K5EL <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="200">0-R5TS <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="lsjep">LS-JEP <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="flatfee">Other Vale <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="150">Vale System <--> Vale System</option>
-								<option style="background-color: rgb(24,24,24)" disabled>LAWN Deployment</option>
-								<option style="background-color: rgb(24,24,24)" value="750">H-ADOC <--> Jita</option>
+								<option style="background-color: rgb(24,24,24)" disabled>Syndicate</option>
+								<option style="background-color: rgb(24,24,24)" value="400">VSIG-K <--> Jita</option>
+								<option style="background-color: rgb(24,24,24)" value="200">VISG-K <--> Adacyne</option>
+								<option style="background-color: rgb(24,24,24)" value="400">DCHR-L <--> Jita</option>
+								<option style="background-color: rgb(24,24,24)" value="200">DCHR-L <--> Adacyne</option>
+								<option style="background-color: rgb(24,24,24)" value="flatfee-syndicate">Other Syndicate <--> Jita</option>
 								<option style="background-color: rgb(24,24,24)" disabled>Imperium Deployment Systems</option>
-								<option style="background-color: rgb(24,24,24)" value="dek-3v8">3V8-LJ <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="dek-ya0">YA0-XJ <--> Jita</option>
-								<option style="background-color: rgb(24,24,24)" value="vale-ya0">YA0-XJ <--> FH-TTC</option>
+								<option style="background-color: rgb(24,24,24)" value="flatfee-saranen">Saranen <--> Jita</option>
 							</select>
 						</formfield>
 						<formfield>
@@ -59,7 +54,7 @@ require_once('includes/header.php');
 					} elseif($_POST['total_collateral'] <= 100000000) {
 						$total_collateral = $_POST['total_collateral'];
 						$collateral_fee_modifier = 0;
-						$collateral_display = '<span class="label label-success">100,000,000 ISK Collateral Free!</span>';
+						$collateral_display = '<span class="label label-success">Free!</span>';
 					} else {
 						$total_collateral = $_POST['total_collateral'];
 						$collateral_fee_modifier = (0.05 * $_POST['total_collateral']);
@@ -69,41 +64,10 @@ require_once('includes/header.php');
 					// Calculating the base cost
 					if($_POST['freighter_route'] != 'flatfee') {
 						switch($_POST['freighter_route']):
-							case 'dek-ya0':
-								$base_rate = 250;
-								$minimum_rate = 50000000;
-								$max_volume = 360000;
-								break;
-							case 'dek-3v8':
-								$base_rate = 250;
-								$minimum_rate = 50000000;
-								$max_volume = 360000;
-								break;
-							case 'vale-ya0':
+							case 'flatfee-saranen':
 								$base_rate = 300;
-								$minimum_rate = 75000000;
+								$minimum_rate = 50000000;
 								$max_volume = 360000;
-								break;
-							case 'lsjep':
-								$max_volume = 360000;
-								if($user->getLoginStatus() AND $user->getUserAccess() AND $user->getGroup() == 1) {
-									$base_rate = 150;
-									$minimum_rate = 1;
-								} else {
-									$base_rate = 250;
-									$minimum_rate = 10000000;
-								}
-								break;
-							case '750':
-								if($_POST['total_volume'] > 120000) {
-									$base_rate = 1;
-									$minimum_rate = 250000000;
-									$max_volume = 120000;
-								} else {
-									$base_rate = 750;
-									$minimum_rate = 25000000;
-									$max_volume = 120000;
-								}
 								break;
 							default:
 								$base_rate = $_POST['freighter_route'];
@@ -120,9 +84,9 @@ require_once('includes/header.php');
 
 						$base_fee_display = $base_rate.'isk/m3';
 					} else {
-						$base_fee = 150000000;
+						$base_fee = 200000000;
 						$max_volume = 360000;
-						$base_fee_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="If you plan on regularly contracting from the same station, consider contacting Ashkrall to add this system as a permanent route for a reduced rate!">Flat Fee: 150,000,000 ISK</span>';
+						$base_fee_display = '<span class="label label-primary" data-toggle="tooltip" data-placement="top" title="If you plan on regularly contracting from the same station, consider contacting Ashkrall to add this system as a permanent route for a reduced rate.">Flat Fee: 200,000,000 ISK</span>';
 					}
 
 					// Confirming the total volume is correct
@@ -178,75 +142,45 @@ require_once('includes/header.php');
 							<th style="text-align: center">Minimum Reward</th>
 						</tr>
 						<tr>
-							<td>FH-TTC <--> Jita</td>
-							<td>Vale of the Silent</td>
+							<td>VISG-K <--> Jita</td>
+							<td>Syndicate</td>
+							<td>400isk/m3</td>
+							<td>10,000,000 ISK</td>
+						</tr>
+						<tr>
+							<td>VSIG-K <--> Adacyne</td>
+							<td>Syndicate</td>
 							<td>200isk/m3</td>
-							<td>5,000,000 ISK</td>
+							<td>10,000,000 ISK</td>
 						</tr>
 						<tr>
-							<td>Q-EHMJ <--> Jita</td>
-							<td>Vale of the Silent</td>
+							<td>DCHR-L <--> Jita</td>
+							<td>Syndicate</td>
+							<td>400isk/m3</td>
+							<td>10,000,000 ISK</td>
+						</tr>
+						<tr>
+							<td>DCHR-L <--> Adacyne</td>
+							<td>Syndicate</td>
 							<td>200isk/m3</td>
-							<td>5,000,000 ISK</td>
+							<td>10,000,000 ISK</td>
 						</tr>
 						<tr>
-							<td>7-K5EL <--> Jita</td>
-							<td>Vale of the Silent</td>
-							<td>200isk/m3</td>
-							<td>5,000,000 ISK</td>
-						</tr>
-						<tr>
-							<td>0-R5TS <--> Jita</td>
-							<td>Vale of the Silent</td>
-							<td>200isk/m3</td>
-							<td>5,000,000 ISK</td>
-						</tr>
-						<tr>
-							<td>LS-JEP <--> Jita</td>
-							<td>Vale of the Silent</td>
-							<td>250isk/m3</td>
-							<td>5,000,000 ISK</td>
-						</tr>
-						<tr>
-							<td>YA0-XJ <--> Jita</td>
-							<td>Deklein</td>
-							<td><!--250isk/m3--><span style="color: red">Suspended</span></td>
-							<td><!--50,000,000 ISK--><span style="color: red">Suspended</span></td>
-						</tr>
-						<tr>
-							<td>YA0-XJ <--> FH-TTC</td>
-							<td>Deklein</td>
-							<td>300isk/m3</td>
-							<td>75,000,000 ISK</td>
-						</tr>
-						<tr>
-							<td>3V8-LJ <--> Jita</td>
-							<td>Pure Blind</td>
-							<td><!--250isk/m3--><span style="color: red">Suspended</span></td>
-							<td><!--50,000,000 ISK--><span style="color: red">Suspended</span></td>
-						</tr>
-						<tr>
-							<td>Other Vale System <--> Jita</td>
-							<td>Vale of the Silent</td>
-							<td>150,000,000 ISK Flat Fee</td>
-							<td>150,000,000 ISK</td>
-						</tr>
-						<tr>
-							<td>Intra-Vale Contracts</td>
-							<td>Vale of the Silent</td>
-							<td>150isk/m3</td>
-							<td>5,000,000 ISK</td>
+							<td>Other Syndicate System <--> Jita</td>
+							<td>Syndicate</td>
+							<td>200,000,000 ISK Flat Fee</td>
+							<td>200,000,000 ISK</td>
 						</tr>
 					</table>
 					<p class="eve-text" style="text-align: center; font-size: 140%">Collateral Fees</p>
 					<table class="table table-striped" style="text-align: center">
 						<tr>
-							<th style="text-align: center">Collateral Amount</th>
+							<th style="text-align: center">Requested Collateral Amount</th>
 							<th style="text-align: center">Additional Fee</th>
 						</tr>
 						<tr>
 							<td>Up To 100 Mil ISK</td>
-							<td style="font-style: italic; color: #01b43a">Included Free!</td>
+							<td style="font-style: italic; color: #01b43a">Free</td>
 						</tr>
 						<tr>
 							<td>100 Mil to 5 Bil</td>

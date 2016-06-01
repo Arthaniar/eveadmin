@@ -39,7 +39,7 @@ Class Fitting {
 		$stmt = $db->prepare('SELECT * FROM doctrines_fits WHERE fittingid = ? AND gid = ? LIMIT 1');
 		$stmt->execute(array($this->fittingID, $this->groupID));
 		$fitting = $stmt->fetch(PDO::FETCH_ASSOC);
-	
+
 		// Populating the class with the fetched Fitting information.
 		$this->fittingName = $fitting['fitting_name'];
 		$this->fittingShipID = $fitting['fitting_ship'];
@@ -63,15 +63,15 @@ Class Fitting {
 		$this->moduleArray = array();
 
 		// Building the Modules array and Slot counts
-		foreach($modules as $module) {
+		foreach ($modules as $module) {
 
 			$moduleSlot = $module['module_slot'];
-			if($moduleSlot == 'Subsystem') {
+			if ($moduleSlot == 'Subsystem') {
 				$objectName = "subsystemCount";
 			} elseif ($moduleSlot == 'Drone') {
 				$objectName = 'droneBayCount';
 			} else {
-				$objectName = strtolower($moduleSlot)."SlotCount";
+				$objectName = strtolower($moduleSlot) . "SlotCount";
 			}
 
 			$slotCount = $this->$objectName;
@@ -79,14 +79,14 @@ Class Fitting {
 
 			$this->moduleArray[$moduleSlot][$slotCount] = array();
 
-			if($module['type_id'] == 0) {
+			if ($module['type_id'] == 0) {
 				$this->moduleArray[$moduleSlot][$slotCount]['prerequisites'] = 'None';
 				$this->moduleArray[$moduleSlot][$slotCount]['character-skills'] = 'None';
 				$this->moduleArray[$moduleSlot][$slotCount]['typeID'] = $module['type_id'];
-				$this->moduleArray[$moduleSlot][$slotCount]['typeName'] = '[empty '.strtolower($moduleSlot).' slot]';
+				$this->moduleArray[$moduleSlot][$slotCount]['typeName'] = '[empty ' . strtolower($moduleSlot) . ' slot]';
 				$this->moduleArray[$moduleSlot][$slotCount]['quantity'] = $module['module_quantity'];
 				$this->moduleArray[$moduleSlot][$slotCount]['slot'] = $moduleSlot;
-				$this->moduleArray[$moduleSlot][$slotCount]['emptySlot'] = TRUE;		
+				$this->moduleArray[$moduleSlot][$slotCount]['emptySlot'] = TRUE;
 			} else {
 				$this->moduleArray[$moduleSlot][$slotCount]['prerequisites'] = $eve->getSkillRequirements($module['type_id']);
 				$this->moduleArray[$moduleSlot][$slotCount]['character-skills'] = Character::checkSkillPreRequisites($this->moduleArray[$moduleSlot][$slotCount]['prerequisites'], $characterID);
@@ -94,109 +94,148 @@ Class Fitting {
 				$this->moduleArray[$moduleSlot][$slotCount]['typeName'] = $eve->getTypeName($module['type_id']);
 				$this->moduleArray[$moduleSlot][$slotCount]['quantity'] = $module['module_quantity'];
 				$this->moduleArray[$moduleSlot][$slotCount]['slot'] = $moduleSlot;
-				$this->moduleArray[$moduleSlot][$slotCount]['emptySlot'] = FALSE;			
+				$this->moduleArray[$moduleSlot][$slotCount]['emptySlot'] = FALSE;
 			}
 
 		}
 	}
 
-	public static function addFitting($doctrineID, $fittingRaw, $fittingRole, $fittingPriority, $fittingNotes, $groupID, $user) {
+	public static function addFitting($doctrineID, $fittingRaw, $fittingModPack, $fittingRole, $fittingPriority, $fittingNotes, $groupID, $user) {
 		global $db;
 		global $eve;
 		// Turning the raw fitting into an array
 		$fittingArray = explode("\n", $fittingRaw);
+		$modPackArray = explode("\n", $fittingModPack);
 
 		// Removing the ship name and fitting name from the array.
 		$shipRaw = $fittingArray[0];
 		unset($fittingArray[0]);
 
-		// Breaking Apart the 
-		preg_match('/(.+?),(.+?)\]/',$shipRaw, $shipMatches);
+		// Breaking Apart the
+		preg_match('/(.+?),(.+?)\]/', $shipRaw, $shipMatches);
 
 		$shipTypeName = trim(substr($shipMatches[1], 1));
 		$shipTypeID = $eve->getTypeID($shipTypeName);
 		$shipFittingName = trim(substr($shipMatches[2], 1));
 
-
-		$stmt = $db->prepare('INSERT INTO doctrines_fits (gid,doctrineid,fitting_name,fitting_ship,fitting_role,fitting_priority,fitting_notes,fitting_value,'.
-						'lastupdated_time,lastupdated_user) VALUES (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE fitting_name=VALUES(fitting_name),'.
-						'fitting_role=VALUES(fitting_role),fitting_priority=VALUES(fitting_priority),fitting_notes=VALUES(fitting_notes),fitting_value=VALUES(fitting_value),'.
-						'lastupdated_time=VALUES(lastupdated_time),lastupdated_user=VALUES(lastupdated_user)');
+		$stmt = $db->prepare('INSERT INTO doctrines_fits (gid,doctrineid,fitting_name,fitting_ship,fitting_role,fitting_priority,fitting_notes,fitting_value,' .
+			'lastupdated_time,lastupdated_user) VALUES (?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE fitting_name=VALUES(fitting_name),' .
+			'fitting_role=VALUES(fitting_role),fitting_priority=VALUES(fitting_priority),fitting_notes=VALUES(fitting_notes),fitting_value=VALUES(fitting_value),' .
+			'lastupdated_time=VALUES(lastupdated_time),lastupdated_user=VALUES(lastupdated_user)');
 		$stmt->execute(array($groupID,
-							 $doctrineID,
-							 $shipFittingName,
-							 $shipTypeID,
-							 $fittingRole,
-							 $fittingPriority,
-							 $fittingNotes,
-							 0,
-							 time(),
-							 $user->getUsername()));
+			$doctrineID,
+			$shipFittingName,
+			$shipTypeID,
+			$fittingRole,
+			$fittingPriority,
+			$fittingNotes,
+			0,
+			time(),
+			$user->getUsername()));
 
 		$stmt = $db->prepare('SELECT fittingid FROM doctrines_fits WHERE fitting_name = ? AND doctrineid = ? AND gid = ?');
 		$stmt->execute(array($shipFittingName, $doctrineID, $groupID));
 		$fittingInfo = $stmt->fetch();
 
-		foreach($fittingArray as $fitting) {
-			$ammoCheck = strpos($fitting, ',');
-			$emptyCheck = strpos($fitting, '[empty');
+		foreach ($modPackArray as $modPack) {
+			$modPack = trim($modPack);
 
-			if($ammoCheck !== FALSE) {
-				$ammoArray = explode(",", $fitting);
-				$fitting = $ammoArray[0];
+			if ($modPack != '' AND $modPack != 'Empty') {
+				$modPackPreg = $modPack;
+				preg_match('/^(.*)(\s+x)(\d+)?/', $modPackPreg, $matches);
+
+				if (isset($matches[3]) and gettype($matches[3]) == 'string') {
+					$quantity = $matches[3];
+					$typeName = $matches[1];
+				} else {
+					$quantity = 1;
+					$typeName = $modPack;
+				}
+				$typeID = $eve->getTypeID($typeName);
+
+				$moduleSlot = 'Drone';
+
+				if ($typeID == NULL) {
+					setAlert('danger', 'Unidentified Module Detected', 'The module ' . $typeName . ' does not exist, and may have been renamed by CCP. Please correct this module name and try again.');
+					$stmt = $db->prepare('DELETE FROM doctrines_fittingmods WHERE fittingid = ?');
+					$stmt->execute(array($fittingInfo['fittingid']));
+
+					$stmt = $db->prepare('DELETE FROM doctrines_fits WHERE fittingid = ? AND gid = ?');
+					$stmt->execute(array($fittingInfo['fittingid'], $user->getGroup()));
+					$fittingBreak = 'break';
+					break;
+				} else {
+					$stmt = $db->prepare('INSERT INTO doctrines_fittingmods (fittingid,type_id,module_quantity,module_slot) VALUES (?,?,?,?)' .
+						' ON DUPLICATE KEY UPDATE module_quantity = module_quantity + VALUES(module_quantity)');
+					$stmt->execute(array($fittingInfo['fittingid'],
+						$typeID,
+						$quantity,
+						$moduleSlot));
+				}
 			}
+		}
 
-			if($emptyCheck !== FALSE) {
-				$emptyArray = explode(" ", $fitting);
-				$emptySlot = ucwords($emptyArray[1]);
-				$stmt = $db->prepare('INSERT INTO doctrines_fittingmods (fittingid,type_id,module_quantity,module_slot) VALUEs (?,?,?,?)'.
-									 ' ON DUPLICATE KEY UPDATE module_quantity = module_quantity + VALUES(module_quantity)');
-				$stmt->execute(array($fittingInfo['fittingid'],
-									 0,
-									 1,
-									 $emptySlot));
-			} else {
-				$fitting = trim($fitting);
-				if($fitting != '' AND $fitting != 'Empty') {
-					$fittingPreg = $fitting;
-					preg_match('/^(.*)(\s+x)(\d+)?/', $fittingPreg, $matches);
+		foreach ($fittingArray as $fitting) {
+			if (!isset($fittingBreak)) {
+				$ammoCheck = strpos($fitting, ',');
+				$emptyCheck = strpos($fitting, '[empty');
 
-					if(isset($matches[3]) and gettype($matches[3]) == 'string') {
-						$quantity = $matches[3];
-						$typeName = $matches[1];
-					} else {
-						$quantity = 1;
-						$typeName = $fitting;
+				if ($ammoCheck !== FALSE) {
+					$ammoArray = explode(",", $fitting);
+					$fitting = $ammoArray[0];
+				}
+
+				if ($emptyCheck !== FALSE) {
+					$emptyArray = explode(" ", $fitting);
+					$emptySlot = ucwords($emptyArray[1]);
+					$stmt = $db->prepare('INSERT INTO doctrines_fittingmods (fittingid,type_id,module_quantity,module_slot) VALUEs (?,?,?,?)' .
+						' ON DUPLICATE KEY UPDATE module_quantity = module_quantity + VALUES(module_quantity)');
+					$stmt->execute(array($fittingInfo['fittingid'],
+						0,
+						1,
+						$emptySlot));
+				} else {
+					$fitting = trim($fitting);
+					if ($fitting != '' AND $fitting != 'Empty') {
+						$fittingPreg = $fitting;
+						preg_match('/^(.*)(\s+x)(\d+)?/', $fittingPreg, $matches);
+
+						if (isset($matches[3]) and gettype($matches[3]) == 'string') {
+							$quantity = $matches[3];
+							$typeName = $matches[1];
+						} else {
+							$quantity = 1;
+							$typeName = $fitting;
+						}
+						$typeID = $eve->getTypeID($typeName);
+
+						if (strpos($typeName, 'Proteus') === FALSE AND strpos($typeName, 'Loki') === FALSE AND strpos($typeName, 'Legion') === FALSE AND strpos($typeName, 'Tengu') === FALSE) {
+							$moduleSlot = Fitting::getModuleSlot($typeID);
+						} else {
+							$moduleSlot = 'Subsystem';
+						}
+
+						if ($typeID == NULL) {
+							setAlert('danger', 'Unidentified Module Detected', 'The module ' . $typeName . ' does not exist, and may have been renamed by CCP. Please correct this module name and try again.');
+							$stmt = $db->prepare('DELETE FROM doctrines_fittingmods WHERE fittingid = ?');
+							$stmt->execute(array($fittingInfo['fittingid']));
+
+							$stmt = $db->prepare('DELETE FROM doctrines_fits WHERE fittingid = ? AND gid = ?');
+							$stmt->execute(array($fittingInfo['fittingid'], $user->getGroup()));
+							break;
+						} else {
+							$stmt = $db->prepare('INSERT INTO doctrines_fittingmods (fittingid,type_id,module_quantity,module_slot) VALUES (?,?,?,?)' .
+								' ON DUPLICATE KEY UPDATE module_quantity = module_quantity + VALUES(module_quantity)');
+							$stmt->execute(array($fittingInfo['fittingid'],
+								$typeID,
+								$quantity,
+								$moduleSlot));
+						}
 					}
-					$typeID = $eve->getTypeID($typeName);
-
-					if(strpos($typeName, 'Proteus') === FALSE AND strpos($typeName, 'Loki') === FALSE AND strpos($typeName, 'Legion') === FALSE AND strpos($typeName, 'Tengu') === FALSE) {
-						$moduleSlot = Fitting::getModuleSlot($typeID);
-					} else {
-						$moduleSlot = 'Subsystem';
-					}
-					
-
-					if($typeID == NULL) {
-						setAlert('danger', 'Unidentified Module Detected', 'The module '.$typeName.' does not exist, and may have been renamed by CCP. Please correct this module name and try again.');
-						$stmt = $db->prepare('DELETE FROM doctrines_fittingmods WHERE fittingid = ?');
-						$stmt->execute(array($fittingInfo['fittingid']));
-
-						$stmt = $db->prepare('DELETE FROM doctrines_fits WHERE fittingid = ? AND gid = ?');
-						$stmt->execute(array($fittingInfo['fittingid'], $user->getGroup()));
-						break;
-					} else {
-						$stmt = $db->prepare('INSERT INTO doctrines_fittingmods (fittingid,type_id,module_quantity,module_slot) VALUES (?,?,?,?)'.
-							                 ' ON DUPLICATE KEY UPDATE module_quantity = module_quantity + VALUES(module_quantity)');
-						$stmt->execute(array($fittingInfo['fittingid'],
-											 $typeID,
-											 $quantity,
-											 $moduleSlot));	
-					}			
 				}
 			}
 
-		} 
+		}
 
 		$fitting_value = Fitting::getFittingValue($fittingInfo['fittingid'], $shipTypeID);
 		$stmt = $db->prepare('UPDATE doctrines_fits SET fitting_value = ? WHERE fittingid = ?');
@@ -207,25 +246,25 @@ Class Fitting {
 		global $eve;
 		$array = array();
 		$character_skills = $module['character-skills'];
-		if($character_skills === TRUE) {
+		if ($character_skills === TRUE) {
 			$array['color'] = 'goodColorBack';
 			$array['badge'] = '<span style="font-size: 85%; font-weight: normal">Trained</span>';
 			$array['icon'] = 'meetsreq';
-		} elseif($character_skills === FALSE) {
+		} elseif ($character_skills === FALSE) {
 			$preReqArray = array();
 			$i = 0;
 
-			foreach($module['prerequisites'] as $prereqs) {
-			$skillName = $eve->getTypeName($prereqs['skillID']);
+			foreach ($module['prerequisites'] as $prereqs) {
+				$skillName = $eve->getTypeName($prereqs['skillID']);
 				$skillLevel = $prereqs['level'];
-				$preReqArray[$i] = "Missing ".$skillName." to Level ".$skillLevel;
+				$preReqArray[$i] = "Missing " . $skillName . " to Level " . $skillLevel;
 				$i++;
 			}
 
-			$missingSkills = implode("\n",$preReqArray);
+			$missingSkills = implode("\n", $preReqArray);
 			$array['icon'] = 'nottrained';
 			$array['color'] = 'badColorBack';
-			$array['badge'] = '<button type="button" style=" margin: 6px 0px 6px 0px;" class="btn btn-danger btn-sm" data-toggle="tooltip" data-placement="top" title="'.$missingSkills.'">Missing Skills</button>';
+			$array['badge'] = '<button type="button" style=" margin: 6px 0px 6px 0px;" class="btn btn-danger btn-sm" data-toggle="tooltip" data-placement="top" title="' . $missingSkills . '">Missing Skills</button>';
 		} else {
 			$array['icon'] = 'belowreq';
 			$array['color'] = 'okayColorBack';
@@ -242,34 +281,32 @@ Class Fitting {
 		$stmt->execute(array($moduleID));
 		$slotID = $stmt->fetch();
 
-		switch($slotID['effectID']):
-			case 11:
-				$moduleSlot = 'Low';
-				break;
-			case 12:
-				$moduleSlot = 'High';
-				break;
-			case 13:
-				$moduleSlot = 'Mid';
-				break;
-			case 2663:
-				$moduleSlot = 'Rig';
-				break;
-			case 3772:
-				$moduleSlot = 'Subsystem';
-				break;
-			default:
-				$moduleSlot = 'Drone';
-				break;
+		switch ($slotID['effectID']):
+	case 11:
+		$moduleSlot = 'Low';
+		break;
+	case 12:
+		$moduleSlot = 'High';
+		break;
+	case 13:
+		$moduleSlot = 'Mid';
+		break;
+	case 2663:
+		$moduleSlot = 'Rig';
+		break;
+	case 3772:
+		$moduleSlot = 'Subsystem';
+		break;
+	default:
+		$moduleSlot = 'Drone';
+		break;
 		endswitch;
 
-		if($moduleSlot == NULL) {
+		if ($moduleSlot == NULL) {
 			setAlert('danger', 'Internal Server Error FC-01', 'An internal server error has occured. Please submit a bug detailing exactly what you have done or attempted to do that caused this error.');
 		}
 		return $moduleSlot;
 	}
-
-
 
 	public static function getDoctrineCompliance($characterID) {
 		//Globalizing the DB variable
@@ -289,12 +326,12 @@ Class Fitting {
 		$stmtModules = $db->prepare('SELECT * FROM doctrines_fittingmods WHERE fittingid = ? ORDER BY type_id ASC');
 
 		//Looping through each doctrine to get fitting information
-		foreach($doctrines as $doctrine) {
+		foreach ($doctrines as $doctrine) {
 			$stmtFittings->execute(array($doctrine['doctrineid']));
 			$fittings = $stmtFittings->fetchAll(PDO::FETCH_ASSOC);
 
 			// Looping through each fitting to get module information
-			foreach($fittings as $fitting) {
+			foreach ($fittings as $fitting) {
 				// Setting the default failure, warning, and success levels for the fitting
 				$fittingFailure = 0;
 				$fittingSuccess = 0;
@@ -308,7 +345,7 @@ Class Fitting {
 
 				$hullCheck = Fitting::checkItemPrerequisites($fitting['fitting_ship'], $characterID);
 
-				if($hullCheck === TRUE) {
+				if ($hullCheck === TRUE) {
 					$fittingSuccess += 1;
 				} elseif ($hullCheck == "Warning") {
 					$fittingWarning += 1;
@@ -319,10 +356,10 @@ Class Fitting {
 				$fittingTotal += 1;
 
 				// Looping through each module to get skill information, and compare it to the character in question
-				foreach($modules as $module) {
+				foreach ($modules as $module) {
 					$moduleCheck = Fitting::checkItemPrerequisites($module['type_id'], $characterID);
 
-					if($moduleCheck === TRUE) {
+					if ($moduleCheck === TRUE) {
 						$fittingSuccess += 1;
 					} elseif ($hullCheck == "Warning") {
 						$fittingWarning += 1;
@@ -333,7 +370,7 @@ Class Fitting {
 					$fittingTotal += 1;
 				}
 
-				if($fittingFailure >= 1) {
+				if ($fittingFailure >= 1) {
 					$colorStatus = 'failure';
 				} elseif ($fittingWarning >= 1) {
 					$colorStatus = 'warning';
@@ -342,8 +379,8 @@ Class Fitting {
 				}
 
 				// Inputting the fitting into the tracking database
-				$stmt = $db->prepare('INSERT INTO doctrines_tracking (charid,character_name,gid,doctrineid,fittingid,usable_items,total_items,color_status) VALUES (?,?,?,?,?,?,?,?)'.
-						' ON DUPLICATE KEY UPDATE character_name=VALUES(character_name),gid=VALUES(gid),usable_items=VALUES(usable_items),total_items=VALUES(total_items),color_status=VALUES(color_status)');
+				$stmt = $db->prepare('INSERT INTO doctrines_tracking (charid,character_name,gid,doctrineid,fittingid,usable_items,total_items,color_status) VALUES (?,?,?,?,?,?,?,?)' .
+					' ON DUPLICATE KEY UPDATE character_name=VALUES(character_name),gid=VALUES(gid),usable_items=VALUES(usable_items),total_items=VALUES(total_items),color_status=VALUES(color_status)');
 				$stmt->execute(array($characterID, $characterName, $groupID, $doctrine['doctrineid'], $fitting['fittingid'], $fittingSuccess, $fittingTotal, $colorStatus));
 
 			}
@@ -375,7 +412,7 @@ Class Fitting {
 
 		$price_total += $price;
 
-		foreach($modules as $module) {
+		foreach ($modules as $module) {
 			// Getting the price
 			$price = $eve_central->lookupItem($module['type_id'], 'sell', 'Jita');
 
@@ -384,8 +421,6 @@ Class Fitting {
 
 		return $price_total;
 	}
-
-
 
 	// Class method access endpoints
 
@@ -431,7 +466,7 @@ Class Fitting {
 
 	public function getRigSlotCount() {
 		return $this->rigSlotCount;
-	}	
+	}
 
 	public function getSubsystemCount() {
 		return $this->subsystemCount;
@@ -442,7 +477,7 @@ Class Fitting {
 	}
 
 	public function getModules($slot) {
-		if($slot == 'all') {
+		if ($slot == 'all') {
 			return $this->moduleArray;
 		} else {
 			return $this->moduleArray[$slot];

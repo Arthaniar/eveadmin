@@ -161,4 +161,40 @@ class Eve {
 
 		return $systemName;
 	}
+
+	public function getSystemID($systemName) {
+		$stmt = $this->db->prepare('SELECT solarSystemID FROM mapSolarSystems WHERE solarSystemName = ? LIMIT 1');
+		$stmt->execute(array($systemName));
+		$system = $stmt->fetch(PDO::FETCH_ASSOC);
+
+		if(!isset($system['solarSystemID']) OR $system['solarSystemID'] == NULL) {
+			var_dump($systemID);
+			var_dump($system);
+			die;
+			$systemID = 0;
+		} else {
+			$systemName = $system['solarSystemID'];
+		}
+
+		return $systemName;
+	}
+
+	public function getSystemRegion($system, $systemType) {
+		$stmt_region = $this->db->prepare('SELECT regionName FROM mapRegions WHERE regionID = ? LIMIT 1');
+
+		if($systemType == 'id') {
+			$stmt = $this->db->prepare('SELECT regionID FROM mapSolarSystems WHERE solarSystemID = ? LIMIT 1');
+			$stmt->execute(array($system));
+			$region = $stmt->fetch(PDO::FETCH_ASSOC);
+		} else {
+			$stmt = $this->db->prepare('SELECT regionID FROM mapSolarSystems WHERE solarSystemName = ? LIMIT 1');
+			$stmt->execute(array($system));
+			$region = $stmt->fetch(PDO::FETCH_ASSOC);
+		}
+
+		$stmt_region->execute(array($region['regionID']));
+		$region_name = $stmt_region->fetch(PDO::FETCH_ASSOC);
+
+		return $region_name['regionName'];
+	}
 }

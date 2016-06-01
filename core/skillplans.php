@@ -88,7 +88,18 @@ if($request['action'] != NULL) {
 }
 
 // Getting all of our skill plans via Skillplan class
-$plans = new Skillplan($db, $user->getGroup(), $user->getDefaultID());
+if(!$user->getLoginStatus()) {
+	$group = 1;
+	$default_id = 0;
+} elseif($user->getDirectorAccess() && $request['action'] != null ) {
+	$group = 1;
+	$default_id = $request['action'];
+} else {
+	$group = $user->getGroup();
+	$default_id = $user->getDefaultID();
+}
+
+$plans = new Skillplan($db, $group, $default_id);
 
 require_once('includes/header.php');
 ?>
@@ -287,7 +298,20 @@ foreach($plans->getPlans() as $skillplan) {
 									<?php
 									$skillGroupFailures = 0;
 									// Looping through each skill to see if the prerequisites are met
-									
+
+                                                                        if($request['action'] == 'editmode' AND $user->getDirectorAccess()) {
+                                                                                ?>
+                                                                                <form method="post" action="/skillplans/editmode/" style="margin-top: 5px; margin-bottom: 5px">
+                                                                                        <input type="hidden" name="subgroup_id" value="<?php echo $group['subgroup_id']; ?>">
+                                                                                        <label for="new_skill_name">Add A New Skill:</label><br />
+                                                                                        <input class="form-control" style="width: 45%; float: left" type="text" placeholder="Add New Skill" name="new_skill_name">
+                                                                                        <input class="form-control" style="width: 45%; float: left; margin-left: 10px; clear: right;" type="text" placeholder="Required Level" name="required_skill_level">
+                                                                                        <input class="btn btn-primary" style="margin-top: 10px" type="submit" value="Add Skill to Plan">
+                                                                                </form>
+                                                                                <?php
+                                                                        }
+
+
 									if(count($group['skills']) >= 1){
 										foreach($group['skills'] as $skill) {
 											if($skill['status_icon'] != 'skill-meets-requirement') {
@@ -344,17 +368,6 @@ foreach($plans->getPlans() as $skillplan) {
 										<?php
 									}
 
-									if($request['action'] == 'editmode' AND $user->getDirectorAccess()) {
-										?>
-										<form method="post" action="/skillplans/editmode/" style="margin-top: 5px">
-											<input type="hidden" name="subgroup_id" value="<?php echo $group['subgroup_id']; ?>">
-											<label for="new_skill_name">Add A New Skill:</label><br />
-											<input class="form-control" style="width: 45%; float: left" type="text" placeholder="Add New Skill" name="new_skill_name">
-											<input class="form-control" style="width: 45%; float: left; margin-left: 10px; clear: right;" type="text" placeholder="Required Level" name="required_skill_level">
-											<input class="btn btn-primary" style="margin-top: 10px" type="submit" value="Add Skill to Plan">
-										</form>
-										<?php
-									}
 									?>
 									</div>	
 								</div>
